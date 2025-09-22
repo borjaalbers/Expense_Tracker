@@ -1,0 +1,28 @@
+/* Light customizations to complement Bootstrap */
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.card-title {
+  font-weight: 600;
+}
+
+/* Buttons inside the table */
+table button.small,
+.btn.small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Improve spacing on the charts */
+#statsSection canvas {
+  max-height: 320px;
+}
+
+/* Responsive tweaks */
+@media (max-width: 576px) {
+  .navbar .text-secondary { display: none; }
+}
+
