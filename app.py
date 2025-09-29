@@ -4,16 +4,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 
-# Choose storage backend: default JSON, or DB if USE_DB env var is set truthy
-USE_DB = os.environ.get("USE_DB", "0").lower() in {"1", "true", "yes", "on"}
-if USE_DB:
-    # Ensure DB tables exist
-    from db import ENGINE  # noqa: F401
-    from models import Base  # noqa: F401
-    Base.metadata.create_all(bind=ENGINE)
-    import storage_db as storage  # type: ignore
-else:
-    import storage
+# Use SQLite database storage exclusively
+from db import ENGINE
+from models import Base
+Base.metadata.create_all(bind=ENGINE)
+import storage_db as storage
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 # Secret key for sessions - in production use env var
@@ -228,4 +223,4 @@ def health():
 # Run
 # --------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5001)), debug=True)
