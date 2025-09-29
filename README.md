@@ -158,3 +158,32 @@ curl -s -b cookies.txt http://localhost:5000/api/expenses | jq
 ---
 
 Happy tracking! If you get stuck, open an issue or ask for help.
+
+---
+
+## Database backend (optional)
+
+You can switch from JSON files to a real database (SQLite via SQLAlchemy) without changing app code.
+
+- Env vars:
+  - `USE_DB`: set to `1`/`true`/`yes`/`on` to enable DB storage
+  - `DATABASE_URL` (optional): SQLAlchemy URL, defaults to local SQLite file `expense_tracker.db`
+
+- One-time setup:
+```bash
+USE_DB=1 python db_init.py
+```
+
+- Migrate existing JSON data into the DB (optional):
+```bash
+USE_DB=1 python migrate_json_to_db.py
+```
+
+- Run using the database backend:
+```bash
+USE_DB=1 python app.py
+```
+
+Notes:
+- Tables: `users`, `expenses` with indexes for common queries and aggregations.
+- You can point `DATABASE_URL` to Postgres/MySQL later with no code changes.
