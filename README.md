@@ -1,189 +1,197 @@
-# Expense Tracker (Flask) – Easy Setup & Usage Guide
+# Expense Tracker - Full Stack Web Application
 
-## What this app does
-Track personal expenses with per-user accounts. After you sign up or sign in, you can add, view, edit, and delete your own expenses. The dashboard shows:
-- By-category totals (pie chart)
-- Monthly totals (bar chart)
+A modern, full-stack expense tracking application built with Flask and SQLite. Features user authentication, CRUD operations, data visualization, and responsive design.
 
-Data is stored in simple JSON files: `users.json` and `expenses.json`.
+## 🚀 Features
 
-## Tech stack
-- Backend: Flask (Python)
-- Storage: JSON files (no database required)
-- Frontend: HTML/CSS + vanilla JS + Chart.js (from CDN)
+- **User Authentication**: Secure sign-up, sign-in, and session management
+- **CRUD Operations**: Create, read, update, and delete expenses
+- **Data Visualization**: Interactive pie charts (by category) and bar charts (monthly spending)
+- **Responsive Design**: Modern UI with Bootstrap 5 and dark theme
+- **Input Validation**: Prevents negative expenses and validates all inputs
+- **Category Management**: Dropdown selection for expense categories
+- **Real-time Updates**: Live data refresh and chart updates
 
-## Requirements
+## 🛠️ Tech Stack
+
+- **Backend**: Flask (Python) with SQLAlchemy ORM
+- **Database**: SQLite (file-based, no server required)
+- **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
+- **UI Framework**: Bootstrap 5
+- **Charts**: Chart.js
+- **Authentication**: Flask sessions with password hashing
+
+## 📋 Requirements
+
 - Python 3.9+
-- pip (comes with most Python installs)
+- pip (Python package manager)
 
-## Quick start (2 minutes)
-1) Clone and open this folder in a terminal.
+## 🚀 Quick Setup (5 minutes)
 
-2) Create and activate a virtual environment:
+### 1. Clone the Repository
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-On Windows (PowerShell):
-```powershell
-py -m venv .venv
-.venv\Scripts\Activate.ps1
+git clone [your-repository-url]
+cd expense_tracker
 ```
 
-3) Install dependencies:
+### 2. Create Virtual Environment
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+# On macOS/Linux:
+source venv/bin/activate
+# On Windows:
+venv\Scripts\activate
+```
+
+### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-4) (Optional but recommended) Set a secret key for sessions:
+### 4. Initialize Database
 ```bash
-export FLASK_SECRET_KEY="change-this-to-a-long-random-string"
-```
-On Windows (Powershell):
-```powershell
-$env:FLASK_SECRET_KEY = "change-this-to-a-long-random-string"
+python db_init.py
 ```
 
-5) Run the app:
+### 5. Run the Application
 ```bash
 python app.py
 ```
 
-6) Open the app: `http://localhost:5000`
+### 6. Access the Application
+Open your browser and navigate to: `http://localhost:5001`
 
-You should see a Sign in / Sign up page. Create an account and you’ll be redirected to the dashboard.
+## 📖 How to Use
 
-## How to use the app
-- Sign up or Sign in on `/`.
-- On `/dashboard`:
-  - Add an expense with Amount, Category, Date (optional), and Note (optional).
-  - View your expenses in the table. Use Edit or Delete to modify them.
-  - See charts update live: By Category (pie) and Monthly Totals (bar).
-- Use the Sign out button at the top right to log out.
+1. **Sign Up**: Create a new account on the landing page
+2. **Sign In**: Use your credentials to access the dashboard
+3. **Add Expenses**: Fill out the expense form with amount, category, date, and notes
+4. **View Data**: See your expenses in the list with edit/delete options
+5. **Analyze Spending**: View pie charts by category and bar charts by month
+6. **Sign Out**: Use the sign-out button to end your session
 
-## Project structure
-```text
+## 🏗️ Project Architecture
+
+```
 expense_tracker/
-  app.py                # Flask app and API routes
-  storage.py            # JSON file read/write and aggregations
-  users.json            # Created automatically on first run (user records)
-  expenses.json         # Created automatically on first run (expenses per user)
-  requirements.txt      # Python dependencies
-  templates/
-    layout.html         # Base layout
-    index.html          # Sign in / Sign up page
-    dashboard.html      # Dashboard page (charts + table)
-  static/
-    app.js              # Frontend logic and API calls
+├── app.py                 # Main Flask application
+├── models.py              # SQLAlchemy database models
+├── storage_db.py          # Database operations (CRUD)
+├── db.py                  # Database configuration
+├── db_init.py             # Database initialization
+├── requirements.txt       # Python dependencies
+├── expense_tracker.db     # SQLite database file
+├── templates/             # HTML templates
+│   ├── layout.html       # Base template with navigation
+│   ├── index.html        # Landing page (sign in/up)
+│   └── dashboard.html    # Main dashboard
+├── static/               # Static assets
+│   ├── app.js           # Frontend JavaScript
+│   └── styles.css       # Custom CSS styling
+└── venv/                 # Python virtual environment
 ```
 
-## Configuration
-- `FLASK_SECRET_KEY`: Secret used to sign the user session.
-  - Default in dev: `dev-secret-key-change-me` (do not use in production).
-  - Set an environment variable to override.
+## 🔧 API Endpoints
 
-## API reference (for devs)
-All responses are JSON. Most endpoints require you to be signed in (session cookie).
+### Authentication
+- `POST /api/signup` - Create new user account
+- `POST /api/signin` - User login
+- `POST /api/signout` - User logout
 
-- Auth
-  - `POST /api/signup`
-    - Body: `{ "username": "alice", "password": "secret" }`
-    - 201 Created → `{ message, user: { id, username } }`
-  - `POST /api/signin`
-    - Body: `{ "username": "alice", "password": "secret" }`
-    - 200 OK → `{ message, user }`
-  - `POST /api/signout`
-    - 200 OK → `{ message }`
+### Expense Management
+- `GET /api/expenses` - List all user expenses
+- `POST /api/expenses` - Create new expense
+- `GET /api/expenses/<id>` - Get specific expense
+- `PUT /api/expenses/<id>` - Update expense
+- `DELETE /api/expenses/<id>` - Delete expense
 
-- Expenses
-  - `POST /api/expenses`
-    - Body: `{ amount: number, category: string, date?: "YYYY-MM-DD", note?: string }`
-    - 201 Created → full expense object `{ id, user_id, amount, category, date, note }`
-  - `GET /api/expenses`
-    - Optional query: `category`, `date_from`, `date_to` (strings like `YYYY-MM-DD`)
-    - 200 OK → `[ ...expenses sorted by date desc... ]`
-  - `PUT /api/expenses/<id>`
-    - Body: any of `{ amount, category, date, note }`
-    - 200 OK → updated expense
-  - `DELETE /api/expenses/<id>`
-    - 200 OK → `{ deleted: <id> }`
+### Analytics
+- `GET /api/summary` - Category totals for charts
+- `GET /api/monthly` - Monthly spending totals
 
-- Stats
-  - `GET /api/summary` → `{ "Category": total, ... }`
-  - `GET /api/monthly` → `{ "YYYY-MM": total, ... }` (sorted ascending)
+### Health Check
+- `GET /api/health` - Application status
 
-- Health
-  - `GET /api/health` → `{ status: "ok", user: <username|null> }`
+## 🗄️ Database Schema
 
-### Example curl calls
-Sign up:
+### Users Table
+- `id` (Primary Key)
+- `username` (Unique)
+- `password_hash` (Encrypted)
+
+### Expenses Table
+- `id` (Primary Key)
+- `user_id` (Foreign Key → users.id)
+- `amount` (Float)
+- `category` (String)
+- `date` (Date)
+- `note` (String)
+
+## 🔒 Security Features
+
+- Password hashing with Werkzeug
+- Session-based authentication
+- Input validation and sanitization
+- SQL injection protection via SQLAlchemy ORM
+- User data isolation (users only see their own expenses)
+
+## 🎨 Frontend Features
+
+- **Responsive Design**: Works on desktop, tablet, and mobile
+- **Dark Theme**: Modern, professional appearance
+- **Interactive Charts**: Real-time data visualization
+- **Form Validation**: Client-side and server-side validation
+- **User Experience**: Smooth navigation and feedback
+
+## 🚨 Troubleshooting
+
+### Port Already in Use
 ```bash
-curl -i -c cookies.txt -H 'Content-Type: application/json' \
-  -d '{"username":"alice","password":"secret"}' \
-  http://localhost:5000/api/signup
+# Kill existing process
+lsof -i:5001
+kill [PID]
+
+# Or use different port
+PORT=5002 python app.py
 ```
-Add an expense:
+
+### Database Issues
 ```bash
-curl -i -b cookies.txt -H 'Content-Type: application/json' \
-  -d '{"amount":12.5,"category":"Food","date":"2025-09-22","note":"Lunch"}' \
-  http://localhost:5000/api/expenses
+# Recreate database
+rm expense_tracker.db
+python db_init.py
 ```
-List expenses:
+
+### Dependencies Issues
 ```bash
-curl -s -b cookies.txt http://localhost:5000/api/expenses | jq
+# Reinstall dependencies
+pip install -r requirements.txt --force-reinstall
 ```
 
-## Data & persistence
-- Files live next to the app in this folder:
-  - `users.json`: list of `{ id, username, password_hash }`
-  - `expenses.json`: list of `{ id, user_id, amount, category, date, note }`
-- Files are created automatically if missing. If a file is corrupted, it will reset to an empty list on the next write.
+## 🔮 Future Enhancements
 
-## Troubleshooting
-- Port already in use (5000):
-  - Change port: `PORT=5050 python app.py`
-- Can’t sign in after sign up:
-  - Restart the server and try again. Ensure cookies are enabled.
-- Charts not showing:
-  - Check console errors (Chart.js requires internet for the CDN). Verify `/api/summary` and `/api/monthly` return data while signed in.
-- JSON files permission issues:
-  - Ensure you have write access to the project folder.
+- **Budget Management**: Set monthly budgets and track progress
+- **Data Export**: Export expenses to CSV/PDF
+- **Advanced Analytics**: Spending trends and predictions
+- **Multi-currency Support**: Handle different currencies
+- **Mobile App**: React Native or Flutter mobile version
 
-## Notes for production (if you deploy)
-- Set a strong `FLASK_SECRET_KEY`.
-- Put the app behind a proper WSGI server (e.g., gunicorn) and a reverse proxy.
-- Move storage to a real database (SQLite/Postgres) for concurrency and reliability.
-- Add HTTPS and user/password policies.
+## 📊 Development Notes
 
----
+This application follows modern web development practices:
+- **Separation of Concerns**: Clear separation between frontend, backend, and database
+- **RESTful API Design**: Standard HTTP methods and status codes
+- **Responsive Design**: Mobile-first approach with Bootstrap
+- **Security Best Practices**: Password hashing, input validation, session management
+- **Code Organization**: Modular structure with clear file responsibilities
 
-Happy tracking! If you get stuck, open an issue or ask for help.
+## 🤝 Contributing
 
----
-
-## Database backend (optional)
-
-You can switch from JSON files to a real database (SQLite via SQLAlchemy) without changing app code.
-
-- Env vars:
-  - `USE_DB`: set to `1`/`true`/`yes`/`on` to enable DB storage
-  - `DATABASE_URL` (optional): SQLAlchemy URL, defaults to local SQLite file `expense_tracker.db`
-
-- One-time setup:
-```bash
-USE_DB=1 python db_init.py
-```
-
-- Migrate existing JSON data into the DB (optional):
-```bash
-USE_DB=1 python migrate_json_to_db.py
-```
-
-- Run using the database backend:
-```bash
-USE_DB=1 python app.py
-```
-
-Notes:
-- Tables: `users`, `expenses` with indexes for common queries and aggregations.
-- You can point `DATABASE_URL` to Postgres/MySQL later with no code changes.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
