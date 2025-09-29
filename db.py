@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 
 def _get_database_url() -> str:
     # Default to SQLite file in project directory
-    default_path = os.path.join(os.path.dirname(__file__), "expense_tracker.db")
+    default_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "expense_tracker.db"))
     return os.environ.get("DATABASE_URL", f"sqlite:///{default_path}")
 
 

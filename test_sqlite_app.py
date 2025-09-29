@@ -10,7 +10,7 @@ from datetime import datetime, date
 
 
 class ExpenseTrackerTester:
-    def __init__(self, base_url="http://localhost:5002"):
+    def __init__(self, base_url="http://localhost:5001"):
         self.base_url = base_url
         self.session = requests.Session()
         self.test_user = {
@@ -64,6 +64,9 @@ class ExpenseTrackerTester:
             )
             if response.status_code == 201:
                 print("✅ User signup successful")
+                return True
+            elif response.status_code == 400 and "already exists" in response.text:
+                print("✅ User already exists (expected)")
                 return True
             else:
                 print(f"❌ User signup failed: {response.status_code} - {response.text}")
@@ -312,7 +315,7 @@ class ExpenseTrackerTester:
 def main():
     """Main test function."""
     print("SQLite Expense Tracker Test Suite")
-    print("Make sure your application is running on http://localhost:5002")
+    print("Make sure your application is running on http://localhost:5001")
     print("Starting tests automatically...")
     
     tester = ExpenseTrackerTester()

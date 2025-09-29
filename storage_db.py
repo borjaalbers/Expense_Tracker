@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import select, func, update, delete
@@ -61,10 +61,27 @@ def get_all_expenses() -> List[Dict[str, Any]]:
         ]
 
 
+def find_expense(expense_id: int) -> Optional[Dict[str, Any]]:
+    with get_session() as session:
+        exp = session.get(Expense, expense_id)
+        if not exp:
+            return None
+        return {
+            "id": exp.id,
+            "user_id": exp.user_id,
+            "amount": float(exp.amount),
+            "category": exp.category,
+            "date": exp.date.isoformat() if exp.date else None,
+            "note": exp.note,
+        }
+
+
 def get_user_expenses(user_id: int) -> List[Dict[str, Any]]:
     with get_session() as session:
         exps = session.scalars(
-            select(Expense).where(Expense.user_id == user_id)
+            select(Expense)
+            .where(Expense.user_id == user_id)
+            .order_by(Expense.date.desc(), Expense.id.desc())
         ).all()
         return [
             {
@@ -81,18 +98,15 @@ def get_user_expenses(user_id: int) -> List[Dict[str, Any]]:
 
 def save_expense(expense: Dict[str, Any]) -> Dict[str, Any]:
     with get_session() as session:
-        date_value: Optional[date]
-        ds = expense.get("date")
-        if ds:
-            date_value = datetime.fromisoformat(ds).date()
-        else:
-            date_value = None
+        date_obj = None
+        if expense.get("date"):
+            date_obj = date.fromisoformat(expense["date"])
         obj = Expense(
             user_id=expense["user_id"],
-            amount=float(expense["amount"]),
-            category=expense.get("category", "Uncategorized"),
-            date=date_value,
-            note=expense.get("note", ""),
+            amount=expense["amount"],
+            category=expense["category"],
+            date=date_obj,
+            note=expense["note"],
         )
         session.add(obj)
         session.flush()
@@ -106,71 +120,51 @@ def save_expense(expense: Dict[str, Any]) -> Dict[str, Any]:
         }
 
 
-def find_expense(expense_id: int) -> Optional[Dict[str, Any]]:
+def update_expense(expense_id: int, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     with get_session() as session:
-        e = session.get(Expense, expense_id)
-        if not e:
+        exp = session.get(Expense, expense_id)
+        if not exp:
             return None
-        return {
-            "id": e.id,
-            "user_id": e.user_id,
-            "amount": float(e.amount),
-            "category": e.category,
-            "date": e.date.isoformat() if e.date else None,
-            "note": e.note,
-        }
-
-
-def update_expense(expense_id: int, update_fields: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    with get_session() as session:
-        e = session.get(Expense, expense_id)
-        if not e:
-            return None
-        if "amount" in update_fields:
-            e.amount = float(update_fields["amount"])
-        if "category" in update_fields:
-            e.category = str(update_fields["category"]) or "Uncategorized"
-        if "date" in update_fields:
-            ds = update_fields["date"]
-            e.date = datetime.fromisoformat(ds).date() if ds else None
-        if "note" in update_fields:
-            e.note = str(update_fields["note"]) or ""
+        for key, value in updates.items():
+            if key == "date" and value:
+                setattr(exp, key, date.fromisoformat(value))
+            else:
+                setattr(exp, key, value)
         session.flush()
         return {
-            "id": e.id,
-            "user_id": e.user_id,
-            "amount": float(e.amount),
-            "category": e.category,
-            "date": e.date.isoformat() if e.date else None,
-            "note": e.note,
+            "id": exp.id,
+            "user_id": exp.user_id,
+            "amount": float(exp.amount),
+            "category": exp.category,
+            "date": exp.date.isoformat() if exp.date else None,
+            "note": exp.note,
         }
 
 
 def delete_expense(expense_id: int) -> bool:
     with get_session() as session:
-        e = session.get(Expense, expense_id)
-        if not e:
+        exp = session.get(Expense, expense_id)
+        if not exp:
             return False
-        session.delete(e)
+        session.delete(exp)
         return True
 
 
 def summary_by_category(user_id: int) -> Dict[str, float]:
     with get_session() as session:
         rows = session.execute(
-            select(Expense.category, func.sum(Expense.amount)).where(Expense.user_id == user_id).group_by(Expense.category)
+            select(Expense.category, func.sum(Expense.amount))
+            .where(Expense.user_id == user_id)
+            .group_by(Expense.category)
         ).all()
         return {cat or "Uncategorized": float(total or 0.0) for cat, total in rows}
 
 
 def monthly_totals(user_id: int) -> Dict[str, float]:
     with get_session() as session:
-        # SQLite: use strftime to aggregate by YYYY-MM
         rows = session.execute(
             select(func.strftime('%Y-%m', Expense.date), func.sum(Expense.amount))
             .where(Expense.user_id == user_id)
             .group_by(func.strftime('%Y-%m', Expense.date))
         ).all()
         return {ym or "": float(total or 0.0) for ym, total in rows}
-
-

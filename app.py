@@ -103,6 +103,8 @@ def api_add_expense():
     data = request.get_json(force=True, silent=True) or {}
     try:
         amount = float(data.get("amount"))
+        if amount <= 0:
+            return jsonify({"error": "Amount must be greater than 0"}), 400
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid or missing 'amount' (must be number)"}), 400
     category = data.get("category", "Uncategorized")
@@ -148,6 +150,16 @@ def api_list_expenses():
     filtered.sort(key=lambda x: (x.get("date",""), x.get("id", 0)), reverse=True)
     return jsonify(filtered), 200
 
+@app.route("/api/expenses/<int:expense_id>", methods=["GET"])
+def api_get_expense(expense_id):
+    user = current_user()
+    if not user:
+        return jsonify({"error": "authentication required"}), 401
+    expense = storage.find_expense(expense_id)
+    if not expense or expense.get("user_id") != user["id"]:
+        return jsonify({"error": "not found"}), 404
+    return jsonify(expense), 200
+
 @app.route("/api/expenses/<int:expense_id>", methods=["PUT"])
 def api_update_expense(expense_id):
     user = current_user()
@@ -160,7 +172,10 @@ def api_update_expense(expense_id):
     allowed = {}
     if "amount" in data:
         try:
-            allowed["amount"] = float(data["amount"])
+            amount = float(data["amount"])
+            if amount <= 0:
+                return jsonify({"error": "Amount must be greater than 0"}), 400
+            allowed["amount"] = amount
         except (TypeError, ValueError):
             return jsonify({"error": "Invalid 'amount'"}), 400
     if "category" in data:
@@ -211,6 +226,7 @@ def api_monthly():
     # sort months ascending
     sorted_months = dict(sorted(months.items()))
     return jsonify(sorted_months), 200
+
 
 # --------------------------
 # Health

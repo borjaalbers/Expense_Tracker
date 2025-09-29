@@ -1,42 +1,49 @@
-<!-- templates/index.html -->
 {% extends "layout.html" %}
+
 {% block body %}
-  <div class="row justify-content-center">
-    <div class="col-12 col-md-10 col-lg-8">
-      <div class="row g-4">
-        <div class="col-12 col-md-6">
-          <div class="card shadow-sm h-100">
-            <div class="card-body">
-              <h5 class="card-title mb-3">Sign in</h5>
-              <div class="mb-3">
-                <label for="signinUsername" class="form-label">Username</label>
-                <input id="signinUsername" type="text" class="form-control" placeholder="yourname" />
-              </div>
-              <div class="mb-3">
-                <label for="signinPassword" class="form-label">Password</label>
-                <input id="signinPassword" type="password" class="form-control" placeholder="••••••••" />
-              </div>
-              <button id="signinBtn" class="btn btn-primary w-100">Sign In</button>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+
+        <!-- Sign In Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">Sign In</h4>
             </div>
-          </div>
-        </div>
-        <div class="col-12 col-md-6">
-          <div class="card shadow-sm h-100">
             <div class="card-body">
-              <h5 class="card-title mb-3">Sign up</h5>
-              <div class="mb-3">
-                <label for="signupUsername" class="form-label">Username</label>
-                <input id="signupUsername" type="text" class="form-control" placeholder="yourname" />
-              </div>
-              <div class="mb-3">
-                <label for="signupPassword" class="form-label">Password</label>
-                <input id="signupPassword" type="password" class="form-control" placeholder="Create a password" />
-              </div>
-              <button id="signupBtn" class="btn btn-success w-100">Sign Up</button>
+                <form id="signinForm">
+                    <div class="mb-3">
+                        <label for="signinUsername" class="form-label">Username</label>
+                        <input id="signinUsername" type="text" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="signinPassword" class="form-label">Password</label>
+                        <input id="signinPassword" type="password" class="form-control" required />
+                    </div>
+                    <button id="signinBtn" type="submit" class="btn btn-primary w-100">Sign In</button>
+                </form>
             </div>
-          </div>
         </div>
-      </div>
+
+        <!-- Sign Up Card -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Sign Up</h4>
+            </div>
+            <div class="card-body">
+                <form id="signupForm">
+                    <div class="mb-3">
+                        <label for="signupUsername" class="form-label">Username</label>
+                        <input id="signupUsername" type="text" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="signupPassword" class="form-label">Password</label>
+                        <input id="signupPassword" type="password" class="form-control" required />
+                    </div>
+                    <button id="signupBtn" type="submit" class="btn btn-success w-100">Sign Up</button>
+                </form>
+            </div>
+        </div>
+
     </div>
-  </div>
+</div>
 {% endblock %}
