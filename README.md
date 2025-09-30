@@ -28,10 +28,10 @@ A modern, full-stack expense tracking application built with Flask and SQLite. F
 
 ## 🚀 Quick Setup (5 minutes)
 
-### 1. Clone the Repository
+### 1. Get the Code
 ```bash
-git clone [your-repository-url]
-cd expense_tracker
+# If you've already downloaded or cloned, cd into the project directory
+cd Expense_Tracker-1
 ```
 
 ### 2. Create Virtual Environment
@@ -68,10 +68,12 @@ Open your browser and navigate to: `http://localhost:5001`
 
 1. **Sign Up**: Create a new account on the landing page
 2. **Sign In**: Use your credentials to access the dashboard
-3. **Add Expenses**: Fill out the expense form with amount, category, date, and notes
-4. **View Data**: See your expenses in the list with edit/delete options
-5. **Analyze Spending**: View pie charts by category and bar charts by month
-6. **Sign Out**: Use the sign-out button to end your session
+3. **Add Expenses**: Fill out amount, category, date, and note
+4. **Personalize Categories**: Use the Add/Manage controls to add or remove categories; your dropdown updates automatically
+5. **Monthly Budget**: Set a monthly limit (defaults to current month). The budget status and progress bar update automatically as you add/edit/delete expenses
+6. **Scope Controls**: At the top of the dashboard, switch between Month or Year and click Apply to filter all lists and charts
+7. **Analyze Spending**: View category summary (pie) and monthly totals (bar). Charts adapt to the selected scope
+8. **Sign Out**: Use the sign-out button
 
 ## 🏗️ Project Architecture
 
@@ -85,12 +87,12 @@ expense_tracker/
 ├── requirements.txt       # Python dependencies
 ├── expense_tracker.db     # SQLite database file
 ├── templates/             # HTML templates
-│   ├── layout.html       # Base template with navigation
-│   ├── index.html        # Landing page (sign in/up)
-│   └── dashboard.html    # Main dashboard
-├── static/               # Static assets
-│   ├── app.js           # Frontend JavaScript
-│   └── styles.css       # Custom CSS styling
+│   ├── layout.html        # Base template with navigation
+│   ├── index.html         # Landing page (sign in/up)
+│   └── dashboard.html     # Main dashboard (expenses, charts, budget, categories, scope)
+├── static/                # Static assets
+│   ├── app.js             # Frontend logic (CRUD, charts, budget, categories, scope)
+│   └── styles.css         # Styles (dark theme + readability)
 └── venv/                 # Python virtual environment
 ```
 
@@ -112,6 +114,15 @@ expense_tracker/
 - `GET /api/summary` - Category totals for charts
 - `GET /api/monthly` - Monthly spending totals
 
+### Budget
+- `GET /api/budget?month=YYYY-MM` - Get budget status for a month `{month, limit, spent, remaining, status}`
+- `POST /api/budget` - Upsert a monthly budget `{month, limit_amount}`
+
+### Categories
+- `GET /api/categories` - List user categories (defaults are seeded on first access)
+- `POST /api/categories` - Add a category `{name}` (idempotent)
+- `DELETE /api/categories/<id>` - Remove a category by id
+
 ### Health Check
 - `GET /api/health` - Application status
 
@@ -130,6 +141,17 @@ expense_tracker/
 - `date` (Date)
 - `note` (String)
 
+### Budgets Table
+- `id` (Primary Key)
+- `user_id` (Foreign Key → users.id)
+- `month` (String YYYY-MM, unique per user)
+- `limit_amount` (Float)
+
+### Categories Table
+- `id` (Primary Key)
+- `user_id` (Foreign Key → users.id)
+- `name` (String, unique per user)
+
 ## 🔒 Security Features
 
 - Password hashing with Werkzeug
@@ -143,6 +165,9 @@ expense_tracker/
 - **Responsive Design**: Works on desktop, tablet, and mobile
 - **Dark Theme**: Modern, professional appearance
 - **Interactive Charts**: Real-time data visualization
+- **Monthly Budgeting**: Set a monthly limit with live progress status and color feedback
+- **Custom Categories**: Add/remove your own categories; dropdown stays in sync
+- **Scope Controls**: Switch Month/Year at the top; all data and charts update
 - **Form Validation**: Client-side and server-side validation
 - **User Experience**: Smooth navigation and feedback
 
@@ -171,9 +196,15 @@ python db_init.py
 pip install -r requirements.txt --force-reinstall
 ```
 
+### API Smoke Test (optional)
+With the server running in one terminal:
+```bash
+python test_sqlite_app.py
+```
+
 ## 🔮 Future Enhancements
 
-- **Budget Management**: Set monthly budgets and track progress
+- **Budget Management**: Set monthly budgets and track progress (added)
 - **Data Export**: Export expenses to CSV/PDF
 - **Advanced Analytics**: Spending trends and predictions
 - **Multi-currency Support**: Handle different currencies
