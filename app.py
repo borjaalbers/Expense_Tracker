@@ -275,6 +275,45 @@ def api_set_budget():
 
 
 # --------------------------
+# Categories endpoints
+# --------------------------
+@app.route("/api/categories", methods=["GET"])
+def api_list_categories():
+    user = current_user()
+    if not user:
+        return jsonify({"error": "authentication required"}), 401
+    cats = storage.list_categories(user["id"])
+    return jsonify(cats), 200
+
+
+@app.route("/api/categories", methods=["POST"])
+def api_add_category():
+    user = current_user()
+    if not user:
+        return jsonify({"error": "authentication required"}), 401
+    data = request.get_json(force=True, silent=True) or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "name required"}), 400
+    try:
+        cat = storage.add_category(user["id"], name)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify(cat), 201
+
+
+@app.route("/api/categories/<int:category_id>", methods=["DELETE"])
+def api_delete_category(category_id: int):
+    user = current_user()
+    if not user:
+        return jsonify({"error": "authentication required"}), 401
+    ok = storage.delete_category(user["id"], category_id)
+    if not ok:
+        return jsonify({"error": "not found"}), 404
+    return jsonify({"deleted": category_id}), 200
+
+
+# --------------------------
 # Health
 # --------------------------
 @app.route("/api/health", methods=["GET"])

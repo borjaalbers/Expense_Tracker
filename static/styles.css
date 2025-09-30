@@ -104,3 +104,22 @@ body {
 #budgetStatus span {
     color: #e0e0e0;
 }
+
+/* Category list modern look */
+#categoryList .list-group-item {
+    border-color: #2c2c2c;
+}
+#categoryList .btn-outline-danger {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+#categoryList .btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+/* Placeholder color for Add Category input on dark background */
+#newCategoryName::placeholder {
+    color: #e0e0e0;
+    opacity: 1;
+}

@@ -7,7 +7,7 @@ from sqlalchemy import select, func, update, delete
 from sqlalchemy.exc import NoResultFound
 
 from db import get_session
-from models import User, Expense, Budget
+from models import User, Expense, Budget, Category
 
 
 # --- Users ---
@@ -238,3 +238,65 @@ def get_budget_status(user_id: int, month: str) -> Dict[str, Any]:
         "remaining": remaining,
         "status": status,
     }
+
+
+# --- Categories ---
+DEFAULT_CATEGORIES: List[str] = [
+    "Food & Dining",
+    "Transportation",
+    "Shopping",
+    "Entertainment",
+    "Bills & Utilities",
+    "Healthcare",
+    "Education",
+    "Travel",
+    "Groceries",
+    "Other",
+]
+
+
+def _ensure_default_categories(user_id: int) -> None:
+    with get_session() as session:
+        existing = session.execute(
+            select(Category).where(Category.user_id == user_id)
+        ).scalars().all()
+        if existing:
+            return
+        # Seed defaults
+        for name in DEFAULT_CATEGORIES:
+            session.add(Category(user_id=user_id, name=name))
+
+
+def list_categories(user_id: int) -> List[Dict[str, Any]]:
+    _ensure_default_categories(user_id)
+    with get_session() as session:
+        cats = session.execute(
+            select(Category).where(Category.user_id == user_id).order_by(Category.name.asc())
+        ).scalars().all()
+        return [{"id": c.id, "name": c.name} for c in cats]
+
+
+def add_category(user_id: int, name: str) -> Dict[str, Any]:
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("name required")
+    with get_session() as session:
+        # check existing
+        existing = session.execute(
+            select(Category).where(Category.user_id == user_id, Category.name == name)
+        ).scalar_one_or_none()
+        if existing:
+            return {"id": existing.id, "name": existing.name}
+        obj = Category(user_id=user_id, name=name)
+        session.add(obj)
+        session.flush()
+        return {"id": obj.id, "name": obj.name}
+
+
+def delete_category(user_id: int, category_id: int) -> bool:
+    with get_session() as session:
+        obj = session.get(Category, category_id)
+        if not obj or obj.user_id != user_id:
+            return False
+        session.delete(obj)
+        return True

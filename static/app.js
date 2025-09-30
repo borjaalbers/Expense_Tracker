@@ -84,6 +84,7 @@ function initDashboard() {
     loadSummary();
     loadMonthlyTotals();
     initBudgetUI();
+    initCategoriesUI();
 
     const expenseForm = document.getElementById("expenseForm");
     if (expenseForm) {
@@ -100,6 +101,71 @@ function initDashboard() {
     document.getElementById("filterAll").onclick = () => loadExpenses("all");
     document.getElementById("filterToday").onclick = () => loadExpenses("today");
     document.getElementById("filterWeek").onclick = () => loadExpenses("week");
+}
+
+// ---------------- Categories UI ----------------
+function initCategoriesUI() {
+    const addBtn = document.getElementById('addCategoryBtn');
+    const nameInput = document.getElementById('newCategoryName');
+    const selectEl = document.getElementById('category');
+    const listEl = document.getElementById('categoryList');
+    if (!addBtn || !nameInput || !selectEl || !listEl) return;
+
+    async function refreshCategories() {
+        try {
+            const cats = await api('/api/categories');
+            // Populate dropdown
+            const current = selectEl.value;
+            selectEl.innerHTML = '<option value="">Select a category</option>' +
+                cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            // Keep current selection if still present
+            if (current && cats.some(c => c.name === current)) {
+                selectEl.value = current;
+            }
+            // Render as a clean list
+            listEl.innerHTML = `
+                <ul class="list-group list-group-flush">
+                    ${cats.map(c => `
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent text-light py-1">
+                            <span class="small">${c.name}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-cat-id="${c.id}">
+                                Remove
+                            </button>
+                        </li>
+                    `).join('')}
+                </ul>
+            `;
+            // Wire delete buttons
+            listEl.querySelectorAll('button[data-cat-id]').forEach(btn => {
+                btn.onclick = async () => {
+                    const id = btn.getAttribute('data-cat-id');
+                    try {
+                        await api(`/api/categories/${id}`, 'DELETE');
+                        await refreshCategories();
+                    } catch (err) {
+                        alert('Failed to delete category: ' + err.message);
+                    }
+                };
+            });
+        } catch (err) {
+            console.error('Failed to load categories:', err);
+        }
+    }
+
+    addBtn.onclick = async () => {
+        const name = nameInput.value.trim();
+        if (!name) return;
+        try {
+            await api('/api/categories', 'POST', { name });
+            nameInput.value = '';
+            await refreshCategories();
+        } catch (err) {
+            alert('Failed to add category: ' + err.message);
+        }
+    };
+
+    // Initial load
+    refreshCategories();
 }
 
 // ---------------- Budget UI ----------------
