@@ -229,6 +229,52 @@ def api_monthly():
 
 
 # --------------------------
+# Budget endpoints
+# --------------------------
+@app.route("/api/budget", methods=["GET"])
+def api_get_budget():
+    user = current_user()
+    if not user:
+        return jsonify({"error": "authentication required"}), 401
+    month = request.args.get("month")
+    if not month:
+        # default to current month in UTC
+        month = datetime.utcnow().strftime("%Y-%m")
+    # validate YYYY-MM
+    try:
+        datetime.strptime(month + "-01", "%Y-%m-%d")
+    except Exception:
+        return jsonify({"error": "Invalid 'month' format. Use YYYY-MM."}), 400
+    status = storage.get_budget_status(user["id"], month)
+    return jsonify(status), 200
+
+
+@app.route("/api/budget", methods=["POST"])
+def api_set_budget():
+    user = current_user()
+    if not user:
+        return jsonify({"error": "authentication required"}), 401
+    data = request.get_json(force=True, silent=True) or {}
+    month = (data.get("month") or "").strip()
+    limit_amount = data.get("limit_amount")
+    if not month:
+        month = datetime.utcnow().strftime("%Y-%m")
+    try:
+        datetime.strptime(month + "-01", "%Y-%m-%d")
+    except Exception:
+        return jsonify({"error": "Invalid 'month' format. Use YYYY-MM."}), 400
+    try:
+        limit_val = float(limit_amount)
+        if limit_val <= 0:
+            return jsonify({"error": "limit_amount must be greater than 0"}), 400
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid or missing 'limit_amount' (must be number)"}), 400
+    saved = storage.upsert_budget(user["id"], month, limit_val)
+    status = storage.get_budget_status(user["id"], month)
+    return jsonify({"budget": saved, "status": status}), 200
+
+
+# --------------------------
 # Health
 # --------------------------
 @app.route("/api/health", methods=["GET"])

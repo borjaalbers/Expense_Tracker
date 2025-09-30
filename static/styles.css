@@ -76,3 +76,8 @@ body {
 .monthly-item:last-child {
     border-bottom: none;
 }
+
+/* Budget */
+#budgetStatus .badge {
+    font-size: 0.85rem;
+}

@@ -76,6 +76,7 @@ function initDashboard() {
     loadExpenses();
     loadSummary();
     loadMonthlyTotals();
+    initBudgetUI();
 
     const expenseForm = document.getElementById("expenseForm");
     if (expenseForm) {
@@ -92,6 +93,102 @@ function initDashboard() {
     document.getElementById("filterAll").onclick = () => loadExpenses("all");
     document.getElementById("filterToday").onclick = () => loadExpenses("today");
     document.getElementById("filterWeek").onclick = () => loadExpenses("week");
+}
+
+// ---------------- Budget UI ----------------
+function initBudgetUI() {
+    const monthInput = document.getElementById("budgetMonth");
+    const limitInput = document.getElementById("budgetLimit");
+    const form = document.getElementById("budgetForm");
+    if (!monthInput || !limitInput || !form) {
+        return; // Budget UI not on this page
+    }
+
+    // Default to current month
+    const now = new Date();
+    const yyyy = now.getUTCFullYear();
+    const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const currentMonth = `${yyyy}-${mm}`;
+    monthInput.value = currentMonth;
+
+    // Load current month status
+    loadBudgetStatus(currentMonth);
+
+    // Change month -> reload status
+    monthInput.onchange = () => {
+        loadBudgetStatus(monthInput.value);
+    };
+
+    // Save budget
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const month = monthInput.value;
+        const limitVal = parseFloat(limitInput.value);
+        if (!month) {
+            alert("Please choose a month");
+            return;
+        }
+        if (!Number.isFinite(limitVal) || limitVal <= 0) {
+            alert("Limit must be a number greater than 0");
+            return;
+        }
+        try {
+            await api('/api/budget', 'POST', { month, limit_amount: limitVal });
+            await loadBudgetStatus(month);
+            // Refresh monthly chart and totals since remaining depends on spending
+            await loadMonthlyTotals();
+        } catch (err) {
+            alert('Failed to save budget: ' + err.message);
+        }
+    };
+}
+
+async function loadBudgetStatus(month) {
+    try {
+        const status = await api(`/api/budget?month=${encodeURIComponent(month)}`);
+        displayBudgetStatus(status);
+    } catch (err) {
+        console.error('Failed to load budget:', err);
+    }
+}
+
+function displayBudgetStatus(status) {
+    const container = document.getElementById('budgetStatus');
+    const monthBadge = document.getElementById('budgetStatusMonth');
+    const stateBadge = document.getElementById('budgetStatusState');
+    const limitDisplay = document.getElementById('budgetLimitDisplay');
+    const spentDisplay = document.getElementById('budgetSpent');
+    const remainingDisplay = document.getElementById('budgetRemaining');
+    const limitInput = document.getElementById('budgetLimit');
+
+    if (!container) return;
+
+    monthBadge.textContent = status.month || '';
+
+    // State badge styling
+    const state = status.status || 'no_budget';
+    stateBadge.textContent = state;
+    stateBadge.classList.remove('bg-info', 'bg-success', 'bg-warning', 'bg-danger', 'bg-secondary');
+    if (state === 'ok') stateBadge.classList.add('bg-success');
+    else if (state === 'warning') stateBadge.classList.add('bg-warning');
+    else if (state === 'over') stateBadge.classList.add('bg-danger');
+    else stateBadge.classList.add('bg-secondary');
+
+    // Numbers
+    const limit = status.limit;
+    const spent = status.spent || 0.0;
+    const remaining = status.remaining;
+
+    limitDisplay.textContent = limit != null ? Number(limit).toFixed(2) : '—';
+    spentDisplay.textContent = Number(spent).toFixed(2);
+    remainingDisplay.textContent = remaining != null ? Number(remaining).toFixed(2) : '—';
+
+    // Prefill limit input with current limit if any
+    if (limitInput) {
+        limitInput.value = limit != null ? Number(limit).toFixed(2) : '';
+    }
+
+    container.style.display = 'block';
 }
 
 async function addExpense(event) {

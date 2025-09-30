@@ -7,7 +7,7 @@ from sqlalchemy import select, func, update, delete
 from sqlalchemy.exc import NoResultFound
 
 from db import get_session
-from models import User, Expense
+from models import User, Expense, Budget
 
 
 # --- Users ---
@@ -168,3 +168,73 @@ def monthly_totals(user_id: int) -> Dict[str, float]:
             .group_by(func.strftime('%Y-%m', Expense.date))
         ).all()
         return {ym or "": float(total or 0.0) for ym, total in rows}
+
+
+# --- Budgets ---
+def get_budget(user_id: int, month: str) -> Optional[Dict[str, Any]]:
+    """Return budget row for a given user and YYYY-MM month, or None."""
+    with get_session() as session:
+        obj = session.execute(
+            select(Budget).where(Budget.user_id == user_id, Budget.month == month)
+        ).scalar_one_or_none()
+        if not obj:
+            return None
+        return {
+            "id": obj.id,
+            "user_id": obj.user_id,
+            "month": obj.month,
+            "limit_amount": float(obj.limit_amount),
+        }
+
+
+def upsert_budget(user_id: int, month: str, limit_amount: float) -> Dict[str, Any]:
+    """Create or update the budget for the given user and month."""
+    with get_session() as session:
+        obj = session.execute(
+            select(Budget).where(Budget.user_id == user_id, Budget.month == month)
+        ).scalar_one_or_none()
+        if obj:
+            obj.limit_amount = limit_amount
+        else:
+            obj = Budget(user_id=user_id, month=month, limit_amount=limit_amount)
+            session.add(obj)
+        session.flush()
+        return {
+            "id": obj.id,
+            "user_id": obj.user_id,
+            "month": obj.month,
+            "limit_amount": float(obj.limit_amount),
+        }
+
+
+def get_budget_status(user_id: int, month: str) -> Dict[str, Any]:
+    """Return structured budget status for a month: limit, spent, remaining, status."""
+    budget = get_budget(user_id, month)
+    totals = monthly_totals(user_id)
+    spent = float(totals.get(month, 0.0))
+    if not budget:
+        return {
+            "month": month,
+            "limit": None,
+            "spent": spent,
+            "remaining": None,
+            "status": "no_budget",
+        }
+    limit_val = float(budget["limit_amount"]) if budget else 0.0
+    remaining = max(limit_val - spent, 0.0)
+    ratio = spent / limit_val if limit_val > 0 else 0.0
+    if limit_val <= 0:
+        status = "no_budget"
+    elif spent > limit_val:
+        status = "over"
+    elif ratio >= 0.9:
+        status = "warning"
+    else:
+        status = "ok"
+    return {
+        "month": month,
+        "limit": limit_val,
+        "spent": spent,
+        "remaining": remaining,
+        "status": status,
+    }

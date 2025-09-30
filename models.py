@@ -51,3 +51,19 @@ class Expense(Base):
 
 
 
+class Budget(Base):
+    __tablename__ = "budgets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    # Stored as YYYY-MM for simplicity and efficient lookups
+    month: Mapped[str] = mapped_column(String(7), nullable=False)
+    limit_amount: Mapped[float] = mapped_column(Float, nullable=False)
+
+    user: Mapped[User] = relationship(backref="budgets")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "month", name="uq_budgets_user_month"),
+        Index("ix_budgets_user_month", "user_id", "month"),
+    )
+
