@@ -41,7 +41,7 @@ body {
 }
 
 .expense-category {
-    color: #6c757d;
+    color: #e0e0e0;
     font-size: 0.875rem;
 }
 
@@ -51,8 +51,13 @@ body {
 }
 
 .expense-note {
-    color: #495057;
+    color: #e0e0e0;
     font-size: 0.875rem;
+}
+
+/* Ensure note isn't dimmed by Bootstrap's text-muted */
+.expense-note.text-muted {
+    color: #e0e0e0 !important;
 }
 
 .summary-item {
@@ -80,4 +85,22 @@ body {
 /* Budget */
 #budgetStatus .badge {
     font-size: 0.85rem;
+}
+
+/* Dark theme readability overrides */
+#categorySummary,
+#categorySummary .summary-item span {
+    color: #e0e0e0;
+}
+
+#monthlyTotals,
+#monthlyTotals .monthly-item span {
+    color: #e0e0e0;
+}
+
+#budgetStatus,
+#budgetStatus div,
+#budgetStatus strong,
+#budgetStatus span {
+    color: #e0e0e0;
 }

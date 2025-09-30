@@ -19,6 +19,13 @@ async function api(path, method = "GET", body = null) {
 
 // Auth UI logic (index page)
 document.addEventListener("DOMContentLoaded", function () {
+    // Chart.js dark theme defaults for readability
+    if (window.Chart && Chart.defaults) {
+        Chart.defaults.color = '#e0e0e0';
+        Chart.defaults.borderColor = '#2c2c2c';
+        Chart.defaults.plugins.legend.labels.color = '#e0e0e0';
+        Chart.defaults.scales = Chart.defaults.scales || {};
+    }
     const signinForm = document.getElementById("signinForm");
     if (signinForm) {
         signinForm.onsubmit = async (e) => {
