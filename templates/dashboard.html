@@ -5,6 +5,29 @@
 {% endblock %}
 
 {% block body %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body d-flex flex-wrap align-items-center gap-2">
+                <div class="me-3 text-light"><strong>View:</strong></div>
+                <div class="btn-group me-3" role="group" aria-label="Scope mode">
+                    <input type="radio" class="btn-check" name="scopeMode" id="scopeModeMonth" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary" for="scopeModeMonth">Month</label>
+                    <input type="radio" class="btn-check" name="scopeMode" id="scopeModeYear" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="scopeModeYear">Year</label>
+                </div>
+                <div id="scopeMonthWrap" class="me-2">
+                    <input id="scopeMonth" type="month" class="form-control" style="width: 170px;" />
+                </div>
+                <div id="scopeYearWrap" class="me-2" style="display:none;">
+                    <input id="scopeYear" type="number" class="form-control" style="width: 120px;" placeholder="YYYY" />
+                </div>
+                <button id="applyScopeBtn" class="btn btn-primary">Apply</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
 <div class="row">
     <div class="col-md-6">
         <div class="card">
@@ -129,12 +152,17 @@
                             <span class="badge bg-secondary" id="budgetStatusMonth">YYYY-MM</span>
                             <span class="badge bg-info ms-2" id="budgetStatusState">ok</span>
                         </div>
-                        <div class="text-end">
+                <div class="text-end">
                             <div><strong>Limit:</strong> $<span id="budgetLimitDisplay">0.00</span></div>
                             <div><strong>Spent:</strong> $<span id="budgetSpent">0.00</span></div>
                             <div><strong>Remaining:</strong> $<span id="budgetRemaining">0.00</span></div>
                         </div>
                     </div>
+                            <div class="mt-3">
+                                <div class="progress" style="height: 12px; background-color: #2c2c2c;">
+                                    <div id="budgetProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
                 </div>
             </div>
         </div>

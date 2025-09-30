@@ -85,6 +85,7 @@ function initDashboard() {
     loadMonthlyTotals();
     initBudgetUI();
     initCategoriesUI();
+    initScopeControls();
 
     const expenseForm = document.getElementById("expenseForm");
     if (expenseForm) {
@@ -101,6 +102,105 @@ function initDashboard() {
     document.getElementById("filterAll").onclick = () => loadExpenses("all");
     document.getElementById("filterToday").onclick = () => loadExpenses("today");
     document.getElementById("filterWeek").onclick = () => loadExpenses("week");
+}
+
+// ---------------- Scope (Month/Year) ----------------
+let currentScope = { mode: 'month', month: null, year: null };
+
+function initScopeControls() {
+    const modeMonth = document.getElementById('scopeModeMonth');
+    const modeYear = document.getElementById('scopeModeYear');
+    const monthInput = document.getElementById('scopeMonth');
+    const yearInput = document.getElementById('scopeYear');
+    const monthWrap = document.getElementById('scopeMonthWrap');
+    const yearWrap = document.getElementById('scopeYearWrap');
+    const applyBtn = document.getElementById('applyScopeBtn');
+    if (!modeMonth || !modeYear || !monthInput || !yearInput || !applyBtn) return;
+
+    // Defaults to current month/year
+    const now = new Date();
+    const yyyy = now.getUTCFullYear();
+    const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
+    monthInput.value = `${yyyy}-${mm}`;
+    yearInput.value = yyyy;
+    currentScope = { mode: 'month', month: monthInput.value, year: yyyy };
+
+    function updateModeDisplay() {
+        const isMonth = modeMonth.checked;
+        monthWrap.style.display = isMonth ? '' : 'none';
+        yearWrap.style.display = isMonth ? 'none' : '';
+    }
+
+    modeMonth.onchange = updateModeDisplay;
+    modeYear.onchange = updateModeDisplay;
+    updateModeDisplay();
+
+    applyBtn.onclick = async () => {
+        const isMonth = modeMonth.checked;
+        currentScope.mode = isMonth ? 'month' : 'year';
+        currentScope.month = isMonth ? monthInput.value : null;
+        currentScope.year = isMonth ? null : parseInt(yearInput.value, 10);
+
+        // Recompute and refresh UI based on scope
+        await refreshAllForScope();
+    };
+}
+
+async function refreshAllForScope() {
+    // Fetch all expenses, then filter on client based on scope
+    try {
+        const all = await api('/api/expenses');
+        const { filtered, dateFrom, dateTo } = filterExpensesByScope(all, currentScope);
+        displayExpenses(filtered);
+        updateFilterButtons('all');
+
+        // Recompute summary and monthly charts from filtered data
+        const summary = computeSummaryByCategory(filtered);
+        displaySummary(summary);
+        drawCategoryChart(summary);
+
+        const monthly = computeMonthlyTotals(filtered);
+        displayMonthlyTotals(monthly);
+        drawMonthlyChart(monthly);
+        // Keep budget status in sync with current scope/month selection
+        refreshBudgetUI();
+    } catch (err) {
+        console.error('Failed to refresh for scope:', err);
+    }
+}
+
+function filterExpensesByScope(expenses, scope) {
+    if (!expenses || expenses.length === 0) return { filtered: [], dateFrom: null, dateTo: null };
+    if (scope.mode === 'month' && scope.month) {
+        const prefix = scope.month; // YYYY-MM
+        const filtered = expenses.filter(e => (e.date || '').startsWith(prefix));
+        return { filtered, dateFrom: `${prefix}-01`, dateTo: `${prefix}-31` };
+    } else if (scope.mode === 'year' && scope.year) {
+        const y = String(scope.year);
+        const filtered = expenses.filter(e => (e.date || '').startsWith(y + '-'));
+        return { filtered, dateFrom: `${y}-01-01`, dateTo: `${y}-12-31` };
+    }
+    return { filtered: expenses, dateFrom: null, dateTo: null };
+}
+
+function computeSummaryByCategory(expenses) {
+    const sums = {};
+    for (const e of expenses) {
+        const cat = e.category || 'Uncategorized';
+        sums[cat] = (sums[cat] || 0) + (e.amount || 0);
+    }
+    return sums;
+}
+
+function computeMonthlyTotals(expenses) {
+    const totals = {};
+    for (const e of expenses) {
+        const ym = (e.date || '').slice(0, 7); // YYYY-MM
+        if (!ym) continue;
+        totals[ym] = (totals[ym] || 0) + (e.amount || 0);
+    }
+    // Sorted
+    return Object.fromEntries(Object.entries(totals).sort((a, b) => a[0].localeCompare(b[0])));
 }
 
 // ---------------- Categories UI ----------------
@@ -233,6 +333,7 @@ function displayBudgetStatus(status) {
     const spentDisplay = document.getElementById('budgetSpent');
     const remainingDisplay = document.getElementById('budgetRemaining');
     const limitInput = document.getElementById('budgetLimit');
+    const progressBar = document.getElementById('budgetProgress');
 
     if (!container) return;
 
@@ -262,6 +363,64 @@ function displayBudgetStatus(status) {
     }
 
     container.style.display = 'block';
+
+    // Progress bar and daily average calculations
+    if (progressBar) {
+        let pct = 0;
+        if (limit && limit > 0) {
+            pct = Math.max(0, Math.min(100, (spent / limit) * 100));
+        }
+        progressBar.style.width = pct.toFixed(0) + '%';
+
+        // Color gradient based on remaining vs expected remaining
+        // Compute average per day allowed and compare against today usage pace
+        try {
+            const month = (status.month || '');
+            const [y, m] = month.split('-').map(Number);
+            const daysInMonth = new Date(y, m, 0).getDate();
+            const today = new Date();
+            const todayY = today.getUTCFullYear();
+            const todayM = today.getUTCMonth() + 1;
+            const todayD = today.getUTCDate();
+            const isCurrentMonth = (y === todayY && m === todayM);
+            const elapsedDays = isCurrentMonth ? Math.max(1, todayD) : daysInMonth; // assume full month if not current
+            const remainingDays = Math.max(0, daysInMonth - (isCurrentMonth ? todayD : daysInMonth));
+
+            const avgAllowedPerDay = limit && limit > 0 ? limit / daysInMonth : 0;
+            const avgSpentPerDaySoFar = elapsedDays > 0 ? spent / elapsedDays : 0;
+            // Avg/day left removed from UI per request
+
+            // Determine color: green if spending pace <= avgAllowedPerDay, yellow if within 10%, else red
+            let color = '#00c853'; // green
+            if (avgSpentPerDaySoFar > avgAllowedPerDay * 1.10) {
+                color = '#dc3545'; // red
+            } else if (avgSpentPerDaySoFar > avgAllowedPerDay) {
+                color = '#ffc107'; // yellow
+            }
+            progressBar.style.background = color;
+        } catch (e) {
+            // Fallback color if parsing fails
+            progressBar.style.background = '#00c853';
+        }
+    }
+}
+
+// --- Budget helpers ---
+function getDesiredBudgetMonth() {
+    const monthInput = document.getElementById('budgetMonth');
+    if (monthInput && monthInput.value) return monthInput.value;
+    if (typeof currentScope !== 'undefined' && currentScope.mode === 'month' && currentScope.month) {
+        return currentScope.month;
+    }
+    const now = new Date();
+    const yyyy = now.getUTCFullYear();
+    const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
+    return `${yyyy}-${mm}`;
+}
+
+function refreshBudgetUI() {
+    const month = getDesiredBudgetMonth();
+    loadBudgetStatus(month);
 }
 
 async function addExpense(event) {
@@ -288,6 +447,7 @@ async function addExpense(event) {
         loadExpenses();
         loadSummary();
         loadMonthlyTotals();
+        refreshBudgetUI();
     } catch (err) {
         alert("Failed to add expense: " + err.message);
     }
@@ -360,6 +520,7 @@ async function updateExpense(expenseId) {
         loadExpenses();
         loadSummary();
         loadMonthlyTotals();
+        refreshBudgetUI();
         
     } catch (err) {
         alert("Failed to update expense: " + err.message);
@@ -377,6 +538,7 @@ async function deleteExpense(expenseId) {
         loadExpenses();
         loadSummary();
         loadMonthlyTotals();
+        refreshBudgetUI();
     } catch (err) {
         alert("Failed to delete expense: " + err.message);
     }
