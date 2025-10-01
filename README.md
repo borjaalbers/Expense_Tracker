@@ -2,7 +2,7 @@
 
 A modern, full-stack expense tracking application built with Flask and SQLite. Features user authentication, CRUD operations, data visualization, and responsive design.
 
-## 🚀 Features
+##  Features
 
 - **User Authentication**: Secure sign-up, sign-in, and session management
 - **CRUD Operations**: Create, read, update, and delete expenses
@@ -12,7 +12,7 @@ A modern, full-stack expense tracking application built with Flask and SQLite. F
 - **Category Management**: Dropdown selection for expense categories
 - **Real-time Updates**: Live data refresh and chart updates
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **Backend**: Flask (Python) with SQLAlchemy ORM
 - **Database**: SQLite (file-based, no server required)
@@ -21,12 +21,12 @@ A modern, full-stack expense tracking application built with Flask and SQLite. F
 - **Charts**: Chart.js
 - **Authentication**: Flask sessions with password hashing
 
-## 📋 Requirements
+##  Requirements
 
 - Python 3.9+
 - pip (Python package manager)
 
-## 🚀 Quick Setup (5 minutes)
+##  Quick Setup (5 minutes)
 
 ### 1. Get the Code
 ```bash
@@ -64,7 +64,7 @@ python app.py
 ### 6. Access the Application
 Open your browser and navigate to: `http://localhost:5001`
 
-## 📖 How to Use
+##  How to Use
 
 1. **Sign Up**: Create a new account on the landing page
 2. **Sign In**: Use your credentials to access the dashboard
@@ -75,7 +75,7 @@ Open your browser and navigate to: `http://localhost:5001`
 7. **Analyze Spending**: View category summary (pie) and monthly totals (bar). Charts adapt to the selected scope
 8. **Sign Out**: Use the sign-out button
 
-## 🏗️ Project Architecture
+##  Project Architecture
 
 ```
 expense_tracker/
@@ -96,7 +96,7 @@ expense_tracker/
 └── venv/                 # Python virtual environment
 ```
 
-## 🔧 API Endpoints
+##  API Endpoints
 
 ### Authentication
 - `POST /api/signup` - Create new user account
@@ -152,7 +152,7 @@ expense_tracker/
 - `user_id` (Foreign Key → users.id)
 - `name` (String, unique per user)
 
-## 🔒 Security Features
+##  Security Features
 
 - Password hashing with Werkzeug
 - Session-based authentication
@@ -160,7 +160,7 @@ expense_tracker/
 - SQL injection protection via SQLAlchemy ORM
 - User data isolation (users only see their own expenses)
 
-## 🎨 Frontend Features
+##  Frontend Features
 
 - **Responsive Design**: Works on desktop, tablet, and mobile
 - **Dark Theme**: Modern, professional appearance
@@ -171,7 +171,45 @@ expense_tracker/
 - **Form Validation**: Client-side and server-side validation
 - **User Experience**: Smooth navigation and feedback
 
-## 🚨 Troubleshooting
+##  Running Tests
+
+This project includes comprehensive backend unit tests with 90%+ code coverage.
+
+### Install Test Dependencies
+```bash
+pip install pytest pytest-cov
+```
+
+### Run All Tests
+```bash
+pytest
+```
+
+### Run Tests with Coverage Report
+```bash
+pytest --cov=. --cov-report=html --cov-report=term
+```
+
+### View Coverage Report
+```bash
+# After running coverage, open the HTML report
+open htmlcov/index.html
+# On Windows: start htmlcov/index.html
+# On Linux: xdg-open htmlcov/index.html
+```
+
+### Run Specific Test Files
+```bash
+pytest tests/test_models.py        # Test database models
+pytest tests/test_storage_db.py    # Test storage layer
+pytest tests/test_app.py           # Test Flask routes
+```
+
+### Coverage Target
+- **Backend files**: 90%+ coverage
+- **Files covered**: `app.py`, `models.py`, `storage_db.py`, `db.py`
+
+##  Troubleshooting
 
 ### Port Already in Use
 ```bash
