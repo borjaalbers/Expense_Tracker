@@ -1,3 +1,7 @@
+// Configuration constants
+const BUDGET_WARNING_THRESHOLD = 0.9;  // 90% of budget triggers warning
+const BUDGET_DANGER_MULTIPLIER = 1.10; // 10% over average triggers red
+
 // Universal helper for API calls
 async function api(path, method = "GET", body = null) {
     const options = {
@@ -327,81 +331,92 @@ async function loadBudgetStatus(month) {
 
 function displayBudgetStatus(status) {
     const container = document.getElementById('budgetStatus');
-    const monthBadge = document.getElementById('budgetStatusMonth');
-    const stateBadge = document.getElementById('budgetStatusState');
-    const limitDisplay = document.getElementById('budgetLimitDisplay');
-    const spentDisplay = document.getElementById('budgetSpent');
-    const remainingDisplay = document.getElementById('budgetRemaining');
-    const limitInput = document.getElementById('budgetLimit');
-    const progressBar = document.getElementById('budgetProgress');
-
     if (!container) return;
 
-    monthBadge.textContent = status.month || '';
+    updateBudgetBadges(status);
+    updateBudgetNumbers(status);
+    updateBudgetProgressBar(status);
+    
+    container.style.display = 'block';
+}
 
-    // State badge styling
+function updateBudgetBadges(status) {
+    const monthBadge = document.getElementById('budgetStatusMonth');
+    const stateBadge = document.getElementById('budgetStatusState');
+    
+    monthBadge.textContent = status.month || '';
+    
     const state = status.status || 'no_budget';
     stateBadge.textContent = state;
     stateBadge.classList.remove('bg-info', 'bg-success', 'bg-warning', 'bg-danger', 'bg-secondary');
+    
     if (state === 'ok') stateBadge.classList.add('bg-success');
     else if (state === 'warning') stateBadge.classList.add('bg-warning');
     else if (state === 'over') stateBadge.classList.add('bg-danger');
     else stateBadge.classList.add('bg-secondary');
+}
 
-    // Numbers
+function updateBudgetNumbers(status) {
+    const limitDisplay = document.getElementById('budgetLimitDisplay');
+    const spentDisplay = document.getElementById('budgetSpent');
+    const remainingDisplay = document.getElementById('budgetRemaining');
+    const limitInput = document.getElementById('budgetLimit');
+    
     const limit = status.limit;
     const spent = status.spent || 0.0;
     const remaining = status.remaining;
-
+    
     limitDisplay.textContent = limit != null ? Number(limit).toFixed(2) : '—';
     spentDisplay.textContent = Number(spent).toFixed(2);
     remainingDisplay.textContent = remaining != null ? Number(remaining).toFixed(2) : '—';
-
-    // Prefill limit input with current limit if any
+    
     if (limitInput) {
         limitInput.value = limit != null ? Number(limit).toFixed(2) : '';
     }
+}
 
-    container.style.display = 'block';
+function updateBudgetProgressBar(status) {
+    const progressBar = document.getElementById('budgetProgress');
+    if (!progressBar) return;
+    
+    const limit = status.limit;
+    const spent = status.spent || 0.0;
+    
+    let pct = 0;
+    if (limit && limit > 0) {
+        pct = Math.max(0, Math.min(100, (spent / limit) * 100));
+    }
+    progressBar.style.width = pct.toFixed(0) + '%';
+    
+    const color = calculateBudgetColor(status);
+    progressBar.style.background = color;
+}
 
-    // Progress bar and daily average calculations
-    if (progressBar) {
-        let pct = 0;
-        if (limit && limit > 0) {
-            pct = Math.max(0, Math.min(100, (spent / limit) * 100));
+function calculateBudgetColor(status) {
+    try {
+        const month = status.month || '';
+        const [y, m] = month.split('-').map(Number);
+        const daysInMonth = new Date(y, m, 0).getDate();
+        const today = new Date();
+        const todayY = today.getUTCFullYear();
+        const todayM = today.getUTCMonth() + 1;
+        const todayD = today.getUTCDate();
+        const isCurrentMonth = (y === todayY && m === todayM);
+        const elapsedDays = isCurrentMonth ? Math.max(1, todayD) : daysInMonth;
+        
+        const limit = status.limit;
+        const spent = status.spent || 0.0;
+        const avgAllowedPerDay = limit && limit > 0 ? limit / daysInMonth : 0;
+        const avgSpentPerDaySoFar = elapsedDays > 0 ? spent / elapsedDays : 0;
+        
+        if (avgSpentPerDaySoFar > avgAllowedPerDay * BUDGET_DANGER_MULTIPLIER) {
+            return '#dc3545'; // red
+        } else if (avgSpentPerDaySoFar > avgAllowedPerDay) {
+            return '#ffc107'; // yellow
         }
-        progressBar.style.width = pct.toFixed(0) + '%';
-
-        // Color gradient based on remaining vs expected remaining
-        // Compute average per day allowed and compare against today usage pace
-        try {
-            const month = (status.month || '');
-            const [y, m] = month.split('-').map(Number);
-            const daysInMonth = new Date(y, m, 0).getDate();
-            const today = new Date();
-            const todayY = today.getUTCFullYear();
-            const todayM = today.getUTCMonth() + 1;
-            const todayD = today.getUTCDate();
-            const isCurrentMonth = (y === todayY && m === todayM);
-            const elapsedDays = isCurrentMonth ? Math.max(1, todayD) : daysInMonth; // assume full month if not current
-            const remainingDays = Math.max(0, daysInMonth - (isCurrentMonth ? todayD : daysInMonth));
-
-            const avgAllowedPerDay = limit && limit > 0 ? limit / daysInMonth : 0;
-            const avgSpentPerDaySoFar = elapsedDays > 0 ? spent / elapsedDays : 0;
-            // Avg/day left removed from UI per request
-
-            // Determine color: green if spending pace <= avgAllowedPerDay, yellow if within 10%, else red
-            let color = '#00c853'; // green
-            if (avgSpentPerDaySoFar > avgAllowedPerDay * 1.10) {
-                color = '#dc3545'; // red
-            } else if (avgSpentPerDaySoFar > avgAllowedPerDay) {
-                color = '#ffc107'; // yellow
-            }
-            progressBar.style.background = color;
-        } catch (e) {
-            // Fallback color if parsing fails
-            progressBar.style.background = '#00c853';
-        }
+        return '#00c853'; // green
+    } catch (e) {
+        return '#00c853'; // green fallback
     }
 }
 
@@ -730,104 +745,6 @@ function displaySummary(summary) {
         .join("");
 }
 
-// Chart drawing functions
-function drawCategoryChart(summary) {
-    const ctx = document.getElementById('categoryChart').getContext('2d');
-    
-    // Destroy existing chart if it exists
-    if (categoryChart) {
-        categoryChart.destroy();
-    }
-    
-    if (Object.keys(summary).length === 0) {
-        return;
-    }
-    
-    const labels = Object.keys(summary);
-    const data = Object.values(summary);
-    const colors = [
-        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-        '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
-    ];
-    
-    categoryChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: colors.slice(0, labels.length),
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true
-                    }
-                }
-            }
-        }
-    });
-}
-
-function drawMonthlyChart(totals) {
-    const ctx = document.getElementById('monthlyChart').getContext('2d');
-    
-    // Destroy existing chart if it exists
-    if (monthlyChart) {
-        monthlyChart.destroy();
-    }
-    
-    if (Object.keys(totals).length === 0) {
-        return;
-    }
-    
-    // Sort months chronologically
-    const sortedEntries = Object.entries(totals).sort((a, b) => a[0].localeCompare(b[0]));
-    const labels = sortedEntries.map(([month, _]) => month);
-    const data = sortedEntries.map(([_, total]) => total);
-    
-    monthlyChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Spending',
-                data: data,
-                backgroundColor: '#36A2EB',
-                borderColor: '#36A2EB',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value.toFixed(2);
-                        }
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-        }
-    });
-}
-
 async function loadMonthlyTotals() {
     try {
         const totals = await api("/api/monthly");
@@ -855,102 +772,4 @@ function displayMonthlyTotals(totals) {
     `
         )
         .join("");
-}
-
-// Chart drawing functions
-function drawCategoryChart(summary) {
-    const ctx = document.getElementById('categoryChart').getContext('2d');
-    
-    // Destroy existing chart if it exists
-    if (categoryChart) {
-        categoryChart.destroy();
-    }
-    
-    if (Object.keys(summary).length === 0) {
-        return;
-    }
-    
-    const labels = Object.keys(summary);
-    const data = Object.values(summary);
-    const colors = [
-        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-        '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
-    ];
-    
-    categoryChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: colors.slice(0, labels.length),
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true
-                    }
-                }
-            }
-        }
-    });
-}
-
-function drawMonthlyChart(totals) {
-    const ctx = document.getElementById('monthlyChart').getContext('2d');
-    
-    // Destroy existing chart if it exists
-    if (monthlyChart) {
-        monthlyChart.destroy();
-    }
-    
-    if (Object.keys(totals).length === 0) {
-        return;
-    }
-    
-    // Sort months chronologically
-    const sortedEntries = Object.entries(totals).sort((a, b) => a[0].localeCompare(b[0]));
-    const labels = sortedEntries.map(([month, _]) => month);
-    const data = sortedEntries.map(([_, total]) => total);
-    
-    monthlyChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Spending',
-                data: data,
-                backgroundColor: '#36A2EB',
-                borderColor: '#36A2EB',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value.toFixed(2);
-                        }
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-        }
-    });
 }
