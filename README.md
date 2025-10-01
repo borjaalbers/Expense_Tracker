@@ -240,7 +240,7 @@ With the server running in one terminal:
 python test_sqlite_app.py
 ```
 
-## 🔮 Future Enhancements
+##  Future Enhancements
 
 - **Budget Management**: Set monthly budgets and track progress (added)
 - **Data Export**: Export expenses to CSV/PDF
@@ -248,7 +248,7 @@ python test_sqlite_app.py
 - **Multi-currency Support**: Handle different currencies
 - **Mobile App**: React Native or Flutter mobile version
 
-## 📊 Development Notes
+##  Development Notes
 
 This application follows modern web development practices:
 - **Separation of Concerns**: Clear separation between frontend, backend, and database
@@ -257,7 +257,7 @@ This application follows modern web development practices:
 - **Security Best Practices**: Password hashing, input validation, session management
 - **Code Organization**: Modular structure with clear file responsibilities
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch

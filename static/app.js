@@ -1,7 +1,20 @@
-// Configuration constants
-const BUDGET_WARNING_THRESHOLD = 0.9;  // 90% of budget triggers warning
-const BUDGET_DANGER_MULTIPLIER = 1.10; // 10% over average triggers red
+// ============================================
+// Constants
+// ============================================
+const BUDGET_WARNING_THRESHOLD = 0.9;    // 90% of budget
+const BUDGET_DANGER_THRESHOLD = 1.10;    // 110% of average spending pace
+const BUDGET_COLOR_GREEN = '#00c853';
+const BUDGET_COLOR_YELLOW = '#ffc107';
+const BUDGET_COLOR_RED = '#dc3545';
 
+const CHART_COLORS = [
+    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+    '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
+];
+
+// ============================================
+// API Helper
+// ============================================
 // Universal helper for API calls
 async function api(path, method = "GET", body = null) {
     const options = {
@@ -340,6 +353,7 @@ function displayBudgetStatus(status) {
     container.style.display = 'block';
 }
 
+// Helper: Update budget status badges
 function updateBudgetBadges(status) {
     const monthBadge = document.getElementById('budgetStatusMonth');
     const stateBadge = document.getElementById('budgetStatusState');
@@ -349,13 +363,13 @@ function updateBudgetBadges(status) {
     const state = status.status || 'no_budget';
     stateBadge.textContent = state;
     stateBadge.classList.remove('bg-info', 'bg-success', 'bg-warning', 'bg-danger', 'bg-secondary');
-    
     if (state === 'ok') stateBadge.classList.add('bg-success');
     else if (state === 'warning') stateBadge.classList.add('bg-warning');
     else if (state === 'over') stateBadge.classList.add('bg-danger');
     else stateBadge.classList.add('bg-secondary');
 }
 
+// Helper: Update budget numbers display
 function updateBudgetNumbers(status) {
     const limitDisplay = document.getElementById('budgetLimitDisplay');
     const spentDisplay = document.getElementById('budgetSpent');
@@ -365,36 +379,43 @@ function updateBudgetNumbers(status) {
     const limit = status.limit;
     const spent = status.spent || 0.0;
     const remaining = status.remaining;
-    
+
     limitDisplay.textContent = limit != null ? Number(limit).toFixed(2) : '—';
     spentDisplay.textContent = Number(spent).toFixed(2);
     remainingDisplay.textContent = remaining != null ? Number(remaining).toFixed(2) : '—';
-    
+
     if (limitInput) {
         limitInput.value = limit != null ? Number(limit).toFixed(2) : '';
     }
 }
 
+// Helper: Update budget progress bar with color
 function updateBudgetProgressBar(status) {
     const progressBar = document.getElementById('budgetProgress');
     if (!progressBar) return;
-    
+
     const limit = status.limit;
     const spent = status.spent || 0.0;
     
+    // Calculate percentage
     let pct = 0;
     if (limit && limit > 0) {
         pct = Math.max(0, Math.min(100, (spent / limit) * 100));
     }
     progressBar.style.width = pct.toFixed(0) + '%';
-    
+
+    // Set color based on spending pace
     const color = calculateBudgetColor(status);
     progressBar.style.background = color;
 }
 
+// Helper: Calculate budget progress bar color based on spending pace
 function calculateBudgetColor(status) {
     try {
-        const month = status.month || '';
+        const limit = status.limit;
+        const spent = status.spent || 0.0;
+        const month = (status.month || '');
+        
         const [y, m] = month.split('-').map(Number);
         const daysInMonth = new Date(y, m, 0).getDate();
         const today = new Date();
@@ -403,20 +424,19 @@ function calculateBudgetColor(status) {
         const todayD = today.getUTCDate();
         const isCurrentMonth = (y === todayY && m === todayM);
         const elapsedDays = isCurrentMonth ? Math.max(1, todayD) : daysInMonth;
-        
-        const limit = status.limit;
-        const spent = status.spent || 0.0;
+
         const avgAllowedPerDay = limit && limit > 0 ? limit / daysInMonth : 0;
         const avgSpentPerDaySoFar = elapsedDays > 0 ? spent / elapsedDays : 0;
-        
-        if (avgSpentPerDaySoFar > avgAllowedPerDay * BUDGET_DANGER_MULTIPLIER) {
-            return '#dc3545'; // red
+
+        // Green if on track, yellow if slightly over, red if significantly over
+        if (avgSpentPerDaySoFar > avgAllowedPerDay * BUDGET_DANGER_THRESHOLD) {
+            return BUDGET_COLOR_RED;
         } else if (avgSpentPerDaySoFar > avgAllowedPerDay) {
-            return '#ffc107'; // yellow
+            return BUDGET_COLOR_YELLOW;
         }
-        return '#00c853'; // green
+        return BUDGET_COLOR_GREEN;
     } catch (e) {
-        return '#00c853'; // green fallback
+        return BUDGET_COLOR_GREEN; // Fallback
     }
 }
 
@@ -627,10 +647,6 @@ function drawCategoryChart(summary) {
     
     const labels = Object.keys(summary);
     const data = Object.values(summary);
-    const colors = [
-        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-        '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
-    ];
     
     categoryChart = new Chart(ctx, {
         type: 'pie',
@@ -638,7 +654,7 @@ function drawCategoryChart(summary) {
             labels: labels,
             datasets: [{
                 data: data,
-                backgroundColor: colors.slice(0, labels.length),
+                backgroundColor: CHART_COLORS.slice(0, labels.length),
                 borderWidth: 2,
                 borderColor: '#fff'
             }]
