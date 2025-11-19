@@ -18,9 +18,12 @@ from utils.validation import (
     ValidationError,
     build_expense_payload,
     build_expense_update,
+    filter_expenses_by_category,
+    filter_expenses_by_date_range,
     parse_budget_limit,
     parse_month,
     require_json_body,
+    sort_expenses_by_date_and_id,
     validate_category_name,
     validate_credentials,
 )
@@ -44,6 +47,19 @@ def current_user() -> Optional[Dict[str, Any]]:
     if not uid:
         return None
     return auth_service.get_user_by_id(uid)
+
+
+def require_auth() -> Optional[tuple[Response, int]]:
+    """Check if user is authenticated, return error response if not."""
+    user = current_user()
+    if not user:
+        return error_response("authentication required", status=401)
+    return None
+
+
+def check_expense_ownership(expense: Optional[Dict[str, Any]], user_id: int) -> bool:
+    """Verify that an expense exists and belongs to the specified user."""
+    return expense is not None and expense.get("user_id") == user_id
 
 
 def login_user(user: Dict[str, Any]) -> None:
@@ -124,9 +140,10 @@ def api_signout() -> tuple[Response, int]:
 @require_json_body("amount", error_message="Invalid or missing 'amount' (must be number)")
 def api_add_expense(json_data: Dict[str, Any]) -> tuple[Response, int]:
     """Persist a new expense for the authenticated user."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
     user = current_user()
-    if not user:
-        return error_response("authentication required", status=401)
     try:
         expense = build_expense_payload(user["id"], json_data)
     except ValidationError as exc:
@@ -137,36 +154,28 @@ def api_add_expense(json_data: Dict[str, Any]) -> tuple[Response, int]:
 @app.route("/api/expenses", methods=["GET"])
 def api_list_expenses() -> tuple[Response, int]:
     """Return expenses for the authenticated user with optional filters."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
     user = current_user()
-    if not user:
-        return error_response("authentication required", status=401)
     category = request.args.get("category")
     date_from = request.args.get("date_from")
     date_to = request.args.get("date_to")
     items = expense_service.list_user_expenses(user["id"])
-
-    def in_range(it: Dict[str, Any]) -> bool:
-        ds = it.get("date")
-        if not ds:
-            return True
-        if date_from and ds < date_from:
-            return False
-        if date_to and ds > date_to:
-            return False
-        return True
-
-    filtered = [it for it in items if (category is None or it.get("category") == category) and in_range(it)]
-    filtered.sort(key=lambda x: (x.get("date", ""), x.get("id", 0)), reverse=True)
+    filtered = filter_expenses_by_date_range(items, date_from, date_to)
+    filtered = filter_expenses_by_category(filtered, category)
+    filtered = sort_expenses_by_date_and_id(filtered, reverse=True)
     return json_response(filtered, status=200)
 
 @app.route("/api/expenses/<int:expense_id>", methods=["GET"])
 def api_get_expense(expense_id: int) -> tuple[Response, int]:
     """Return a specific expense owned by the authenticated user."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
     user = current_user()
-    if not user:
-        return error_response("authentication required", status=401)
     expense = expense_service.get_expense(expense_id)
-    if not expense or expense.get("user_id") != user["id"]:
+    if not check_expense_ownership(expense, user["id"]):
         return error_response("not found", status=404, details="Expense not found or not owned by the user.")
     return json_response(expense, status=200)
 
@@ -174,11 +183,12 @@ def api_get_expense(expense_id: int) -> tuple[Response, int]:
 @require_json_body()
 def api_update_expense(expense_id: int, json_data: Dict[str, Any]) -> tuple[Response, int]:
     """Update an expense with validated fields."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
     user = current_user()
-    if not user:
-        return error_response("authentication required", status=401)
-    it = expense_service.get_expense(expense_id)
-    if not it or it.get("user_id") != user["id"]:
+    expense = expense_service.get_expense(expense_id)
+    if not check_expense_ownership(expense, user["id"]):
         return error_response("not found", status=404, details="Expense not found or not owned by the user.")
     try:
         updates = build_expense_update(json_data)
@@ -190,11 +200,12 @@ def api_update_expense(expense_id: int, json_data: Dict[str, Any]) -> tuple[Resp
 @app.route("/api/expenses/<int:expense_id>", methods=["DELETE"])
 def api_delete_expense(expense_id: int) -> tuple[Response, int]:
     """Delete an expense for the authenticated user."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
     user = current_user()
-    if not user:
-        return error_response("authentication required", status=401)
-    it = expense_service.get_expense(expense_id)
-    if not it or it.get("user_id") != user["id"]:
+    expense = expense_service.get_expense(expense_id)
+    if not check_expense_ownership(expense, user["id"]):
         return error_response("not found", status=404, details="Expense not found or not owned by the user.")
     ok = expense_service.delete_expense(expense_id)
     if not ok:
@@ -207,18 +218,20 @@ def api_delete_expense(expense_id: int) -> tuple[Response, int]:
 @app.route("/api/summary", methods=["GET"])
 def api_summary() -> tuple[Response, int]:
     """Return spending totals grouped by category for the current user."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
     user = current_user()
-    if not user:
-        return error_response("authentication required", status=401)
     sums = expense_service.summary_by_category(user["id"])
     return json_response(sums, status=200)
 
 @app.route("/api/monthly", methods=["GET"])
 def api_monthly() -> tuple[Response, int]:
     """Return chronological monthly spending totals for the current user."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
     user = current_user()
-    if not user:
-        return error_response("authentication required", status=401)
     months = expense_service.monthly_totals(user["id"])
     sorted_months = dict(sorted(months.items()))
     return json_response(sorted_months, status=200)
@@ -230,9 +243,10 @@ def api_monthly() -> tuple[Response, int]:
 @app.route("/api/budget", methods=["GET"])
 def api_get_budget() -> tuple[Response, int]:
     """Return budget status for the requested month."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
     user = current_user()
-    if not user:
-        return error_response("authentication required", status=401)
     try:
         month = parse_month(request.args.get("month"), default_to_current=True)
     except ValidationError as exc:
@@ -245,9 +259,10 @@ def api_get_budget() -> tuple[Response, int]:
 @require_json_body()
 def api_set_budget(json_data: Dict[str, Any]) -> tuple[Response, int]:
     """Create or update a budget for the requested month."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
     user = current_user()
-    if not user:
-        return error_response("authentication required", status=401)
     try:
         month = parse_month(json_data.get("month"), default_to_current=True)
         limit_val = parse_budget_limit(json_data.get("limit_amount"))
@@ -264,9 +279,10 @@ def api_set_budget(json_data: Dict[str, Any]) -> tuple[Response, int]:
 @app.route("/api/categories", methods=["GET"])
 def api_list_categories() -> tuple[Response, int]:
     """Return the categories available to the current user."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
     user = current_user()
-    if not user:
-        return error_response("authentication required", status=401)
     cats = category_service.list_categories(user["id"])
     return json_response(cats, status=200)
 
@@ -275,9 +291,10 @@ def api_list_categories() -> tuple[Response, int]:
 @require_json_body("name", error_message="name required")
 def api_add_category(json_data: Dict[str, Any]) -> tuple[Response, int]:
     """Create a new category for the current user."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
     user = current_user()
-    if not user:
-        return error_response("authentication required", status=401)
     try:
         name = validate_category_name(json_data.get("name"))
     except ValidationError as exc:
@@ -292,9 +309,10 @@ def api_add_category(json_data: Dict[str, Any]) -> tuple[Response, int]:
 @app.route("/api/categories/<int:category_id>", methods=["DELETE"])
 def api_delete_category(category_id: int) -> tuple[Response, int]:
     """Delete a category owned by the user."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
     user = current_user()
-    if not user:
-        return error_response("authentication required", status=401)
     ok = category_service.delete_category(user["id"], category_id)
     if not ok:
         return error_response("not found", status=404, details="Category not found or not owned by the user.")

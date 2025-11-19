@@ -59,13 +59,16 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Add docstrings to all functions/classes
    - [x] Remove any dead code
    - [x] Improve error messages
+   - [x] Extract expense filtering logic to utility functions
+   - [x] Create authentication helper to reduce duplication
+   - [x] Extract expense ownership checking to utility function
 
 #### Files to Create/Modify:
-- `config.py` (new)
-- `app.py` (refactor)
-- `storage_db.py` (refactor)
-- `utils/validation.py` (new)
-- `utils/responses.py` (new)
+- `config.py` (new) ✓
+- `app.py` (refactor) ✓
+- `storage_db.py` (refactor) ✓
+- `utils/validation.py` (new) ✓
+- `utils/responses.py` (new) ✓
 
 #### Success Criteria:
 - No hardcoded values in business logic

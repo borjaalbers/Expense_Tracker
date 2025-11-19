@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from functools import wraps
-from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
 
 from flask import Request, request
 
@@ -170,4 +170,51 @@ def validate_category_name(value: Optional[str]) -> str:
         raise ValidationError("name required")
     return name
 
+
+def filter_expenses_by_date_range(
+    expenses: List[Dict[str, Any]], date_from: Optional[str], date_to: Optional[str]
+) -> List[Dict[str, Any]]:
+    """Filter expenses by date range, returning items within the specified range."""
+    if not date_from and not date_to:
+        return expenses
+
+    def in_range(expense: Dict[str, Any]) -> bool:
+        expense_date = expense.get("date")
+        if not expense_date:
+            return True
+        if date_from and expense_date < date_from:
+            return False
+        if date_to and expense_date > date_to:
+            return False
+        return True
+
+    return [exp for exp in expenses if in_range(exp)]
+
+
+def filter_expenses_by_category(
+    expenses: List[Dict[str, Any]], category: Optional[str]
+) -> List[Dict[str, Any]]:
+    """Filter expenses by category, returning items matching the category or all if category is None."""
+    if category is None:
+        return expenses
+    return [exp for exp in expenses if exp.get("category") == category]
+
+
+def sort_expenses_by_date_and_id(expenses: List[Dict[str, Any]], reverse: bool = True) -> List[Dict[str, Any]]:
+    """Sort expenses by date (descending) and then by id (descending)."""
+    return sorted(expenses, key=lambda x: (x.get("date", ""), x.get("id", 0)), reverse=reverse)
+
+
+def require_authenticated_user(get_user_fn: Callable[[], Optional[Dict[str, Any]]]):
+    """Decorator factory that requires an authenticated user for route handlers."""
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            user = get_user_fn()
+            if not user:
+                return error_response("authentication required", status=401)
+            kwargs["user"] = user
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
