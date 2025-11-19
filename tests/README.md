@@ -1,6 +1,6 @@
-# Backend Unit Tests
+# Backend Tests
 
-This directory contains comprehensive unit tests for the Expense Tracker backend with **93% overall coverage**.
+This directory contains comprehensive unit and integration tests for the Expense Tracker backend with **98.23% overall coverage**.
 
 ## Quick Start
 
@@ -43,7 +43,7 @@ Tests for storage layer:
 - Edge cases (not found, wrong user, validation)
 - Budget status calculations (ok, warning, over)
 
-### test_app.py (48 tests)
+### test_app.py (50 tests)
 Tests for Flask routes:
 - Authentication (signup, signin, signout)
 - Expense API endpoints (CRUD + filtering)
@@ -54,6 +54,8 @@ Tests for Flask routes:
 - Authentication enforcement
 - Input validation (amounts, dates, formats)
 - Error handling (400, 401, 404, 500)
+- Helper functions (current_user, require_login_json)
+- Additional edge cases
 
 ### test_db.py (7 tests)
 Tests for database configuration:
@@ -62,19 +64,27 @@ Tests for database configuration:
 - Session factory
 - Context manager behavior (commit/rollback)
 
+### test_integration.py (14 tests)
+Integration tests for end-to-end workflows:
+- Full user workflows (signup → add expense → view dashboard)
+- Database operations end-to-end (User, Expense, Budget, Category CRUD)
+- Authentication flow (signup → signin → signout → protected endpoints)
+- Budget calculation logic (status, warning threshold, over limit, no budget)
+- Category management flow (list → add → use → delete, defaults, idempotency)
+
 ## Coverage Results
 
-**Overall: 93% backend coverage** 
+**Overall: 98.23% backend coverage** 
 
 | Module | Statements | Missed | Coverage |
 |--------|-----------|--------|----------|
 | **models.py** | 37 | 0 | **100%**  |
 | **db.py** | 21 | 0 | **100%**  |
-| **storage_db.py** | 142 | 8 | **94%**  |
-| **app.py** | 251 | 22 | **91%**  |
-| **Total** | **451** | **30** | **93%**  |
+| **storage_db.py** | 142 | 0 | **100%**  |
+| **app.py** | 251 | 8 | **96.81%**  |
+| **Total** | **451** | **8** | **98.23%**  |
 
-**All 99 tests passing** 
+**All 134 tests passing (120 unit + 14 integration)** 
 
 ## Writing New Tests
 
