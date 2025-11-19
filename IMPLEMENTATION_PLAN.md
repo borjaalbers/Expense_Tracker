@@ -92,11 +92,11 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Test utility functions
 
 2. **Add Integration Tests**
-   - [ ] Test full user workflows (signup → add expense → view dashboard)
-   - [ ] Test database operations end-to-end
-   - [ ] Test authentication flow
-   - [ ] Test budget calculation logic
-   - [ ] Test category management flow
+   - [x] Test full user workflows (signup → add expense → view dashboard)
+   - [x] Test database operations end-to-end
+   - [x] Test authentication flow
+   - [x] Test budget calculation logic
+   - [x] Test category management flow
 
 3. **Coverage Analysis**
    - [x] Run coverage report: `pytest --cov=. --cov-report=html --cov-report=term`
@@ -116,12 +116,12 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Add `.coveragerc` or `pyproject.toml` for coverage config
 
 #### Files to Create/Modify:
-- `tests/test_integration.py` (new)
-- `tests/test_utils.py` (new)
-- `tests/test_validation.py` (new)
-- `pytest.ini` (update)
-- `.coveragerc` (new)
-- `tests/README.md` (update)
+- `tests/test_integration.py` (new) ✓
+- `tests/test_utils.py` (new) - Not needed (no separate utils module)
+- `tests/test_validation.py` (new) - Not needed (validation tested in app tests)
+- `pytest.ini` (update) ✓
+- `.coveragerc` (new) ✓
+- `tests/README.md` (update) - Optional
 
 #### Success Criteria:
 - Coverage ≥ 70% for all backend files
