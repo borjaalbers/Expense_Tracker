@@ -576,3 +576,61 @@ class TestStorageEdgeCases:
         # Should update, not add
         assert not mock_session.add.called
 
+    @patch('storage_db.get_session')
+    def test_find_user_by_id_not_found(self, mock_get_session):
+        """Test finding user by ID when user doesn't exist."""
+        mock_session = MagicMock()
+        mock_get_session.return_value.__enter__.return_value = mock_session
+        
+        mock_session.get.return_value = None
+        
+        result = storage_db.find_user_by_id(999)
+        
+        assert result is None
+
+    @patch('storage_db.monthly_totals')
+    @patch('storage_db.get_budget')
+    def test_get_budget_status_zero_limit(self, mock_get_budget, mock_monthly_totals):
+        """Test budget status when limit is zero or negative."""
+        mock_get_budget.return_value = {
+            'id': 1,
+            'user_id': 1,
+            'month': '2024-03',
+            'limit_amount': 0.0
+        }
+        mock_monthly_totals.return_value = {'2024-03': 0.0}
+        
+        result = storage_db.get_budget_status(1, '2024-03')
+        
+        assert result['status'] == 'no_budget'
+        assert result['limit'] == 0.0
+
+    @patch('storage_db.get_session')
+    def test_ensure_default_categories_when_existing(self, mock_get_session):
+        """Test _ensure_default_categories when categories already exist."""
+        mock_session = MagicMock()
+        mock_get_session.return_value.__enter__.return_value = mock_session
+        
+        mock_category = MagicMock()
+        mock_session.execute.return_value.scalars.return_value.all.return_value = [mock_category]
+        
+        storage_db._ensure_default_categories(1)
+        
+        # Should not add any categories
+        assert not mock_session.add.called
+
+    @patch('storage_db.get_session')
+    def test_ensure_default_categories_when_none_exist(self, mock_get_session):
+        """Test _ensure_default_categories when no categories exist."""
+        mock_session = MagicMock()
+        mock_get_session.return_value.__enter__.return_value = mock_session
+        
+        mock_session.execute.return_value.scalars.return_value.all.return_value = []
+        
+        storage_db._ensure_default_categories(1)
+        
+        # Should add default categories
+        assert mock_session.add.called
+        # Should be called 10 times (one for each default category)
+        assert mock_session.add.call_count == 10
+

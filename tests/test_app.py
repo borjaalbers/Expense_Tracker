@@ -742,3 +742,257 @@ class TestCategoryEdgeCases:
         
         assert response.status_code == 401
 
+
+class TestHelperFunctions:
+    """Test helper utility functions in app.py."""
+
+    @patch('app.storage')
+    def test_current_user_with_valid_session(self, mock_storage, client, app):
+        """Test current_user returns user when session has valid user_id."""
+        mock_storage.find_user_by_id.return_value = {'id': 1, 'username': 'testuser'}
+        
+        with app.test_request_context():
+            from flask import session
+            session['user_id'] = 1
+            from app import current_user
+            user = current_user()
+            
+            assert user is not None
+            assert user['id'] == 1
+            assert user['username'] == 'testuser'
+
+    def test_current_user_no_session(self, client, app):
+        """Test current_user returns None when no session."""
+        with app.test_request_context():
+            from app import current_user
+            user = current_user()
+            assert user is None
+
+    @patch('app.storage')
+    def test_current_user_user_not_found(self, mock_storage, client, app):
+        """Test current_user returns None when user_id exists but user not found."""
+        mock_storage.find_user_by_id.return_value = None
+        
+        with app.test_request_context():
+            from flask import session
+            session['user_id'] = 999
+            from app import current_user
+            user = current_user()
+            
+            assert user is None
+
+    def test_require_login_json_returns_error_when_not_logged_in(self, client, app):
+        """Test require_login_json returns 401 when user not logged in."""
+        with app.test_request_context():
+            from app import require_login_json
+            result = require_login_json()
+            
+            assert result is not None
+            status_code = result[1]  # tuple (response, status_code)
+            assert status_code == 401
+
+    @patch('app.current_user')
+    def test_require_login_json_returns_none_when_logged_in(self, mock_current_user, client, app):
+        """Test require_login_json returns None when user is logged in."""
+        mock_current_user.return_value = {'id': 1, 'username': 'testuser'}
+        
+        with app.test_request_context():
+            from app import require_login_json
+            result = require_login_json()
+            
+            assert result is None
+
+
+class TestAdditionalEdgeCases:
+    """Test additional edge cases and error paths."""
+
+    @patch('app.storage')
+    @patch('app.current_user')
+    def test_add_expense_with_default_date(self, mock_current_user, mock_storage, client):
+        """Test adding expense without date uses current date."""
+        mock_current_user.return_value = {'id': 1, 'username': 'testuser'}
+        mock_storage.save_expense.return_value = {
+            'id': 10,
+            'user_id': 1,
+            'amount': 50.0,
+            'category': 'Food',
+            'date': '2024-01-15',
+            'note': 'Lunch'
+        }
+        
+        response = client.post('/api/expenses',
+                              data=json.dumps({
+                                  'amount': 50.0,
+                                  'category': 'Food',
+                                  'note': 'Lunch'
+                              }),
+                              content_type='application/json')
+        
+        assert response.status_code == 201
+        # Verify save_expense was called with a date
+        assert mock_storage.save_expense.called
+        call_args = mock_storage.save_expense.call_args[0][0]
+        assert 'date' in call_args
+
+    @patch('app.storage')
+    @patch('app.current_user')
+    def test_list_expenses_with_no_date_in_item(self, mock_current_user, mock_storage, client):
+        """Test listing expenses when item has no date field."""
+        mock_current_user.return_value = {'id': 1, 'username': 'testuser'}
+        mock_storage.get_user_expenses.return_value = [
+            {'id': 1, 'amount': 10.0, 'category': 'Food', 'note': ''}
+        ]
+        
+        response = client.get('/api/expenses')
+        
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert len(data) == 1
+
+    @patch('app.storage')
+    @patch('app.current_user')
+    def test_list_expenses_date_filter_edge_cases(self, mock_current_user, mock_storage, client):
+        """Test date filtering edge cases."""
+        mock_current_user.return_value = {'id': 1, 'username': 'testuser'}
+        mock_storage.get_user_expenses.return_value = [
+            {'id': 1, 'amount': 10.0, 'category': 'Food', 'date': '2024-01-15', 'note': ''},
+            {'id': 2, 'amount': 20.0, 'category': 'Transport', 'date': '2024-02-01', 'note': ''}
+        ]
+        
+        # Test with date_from only
+        response = client.get('/api/expenses?date_from=2024-01-20')
+        assert response.status_code == 200
+        
+        # Test with date_to only
+        response = client.get('/api/expenses?date_to=2024-01-20')
+        assert response.status_code == 200
+
+    @patch('app.storage')
+    @patch('app.current_user')
+    def test_get_expense_when_find_returns_none(self, mock_current_user, mock_storage, client):
+        """Test getting expense when storage returns None."""
+        mock_current_user.return_value = {'id': 1, 'username': 'testuser'}
+        mock_storage.find_expense.return_value = None
+        
+        response = client.get('/api/expenses/999')
+        
+        assert response.status_code == 404
+
+    @patch('app.storage')
+    @patch('app.current_user')
+    def test_update_expense_invalid_amount_type(self, mock_current_user, mock_storage, client):
+        """Test updating expense with invalid amount type."""
+        mock_current_user.return_value = {'id': 1, 'username': 'testuser'}
+        mock_storage.find_expense.return_value = {
+            'id': 5,
+            'user_id': 1,
+            'amount': 100.0,
+            'category': 'Shopping',
+            'date': '2024-01-10',
+            'note': 'Test'
+        }
+        
+        response = client.put('/api/expenses/5',
+                             data=json.dumps({'amount': 'not-a-number'}),
+                             content_type='application/json')
+        
+        assert response.status_code == 400
+
+    @patch('app.storage')
+    @patch('app.current_user')
+    def test_delete_expense_when_find_returns_none(self, mock_current_user, mock_storage, client):
+        """Test deleting expense when storage.find_expense returns None."""
+        mock_current_user.return_value = {'id': 1, 'username': 'testuser'}
+        mock_storage.find_expense.return_value = None
+        
+        response = client.delete('/api/expenses/999')
+        
+        assert response.status_code == 404
+
+    @patch('app.storage')
+    @patch('app.current_user')
+    def test_delete_expense_wrong_user(self, mock_current_user, mock_storage, client):
+        """Test deleting expense owned by another user."""
+        mock_current_user.return_value = {'id': 1, 'username': 'testuser'}
+        mock_storage.find_expense.return_value = {
+            'id': 5,
+            'user_id': 2,  # Different user
+            'amount': 100.0,
+            'category': 'Shopping',
+            'date': '2024-01-10',
+            'note': 'Test'
+        }
+        
+        response = client.delete('/api/expenses/5')
+        
+        assert response.status_code == 404
+
+    @patch('app.storage')
+    @patch('app.current_user')
+    def test_monthly_endpoint_unauthenticated(self, mock_current_user, mock_storage, client):
+        """Test monthly endpoint without authentication."""
+        mock_current_user.return_value = None
+        
+        response = client.get('/api/monthly')
+        
+        assert response.status_code == 401
+
+    @patch('app.storage')
+    @patch('app.current_user')
+    def test_summary_endpoint_unauthenticated(self, mock_current_user, mock_storage, client):
+        """Test summary endpoint without authentication."""
+        mock_current_user.return_value = None
+        
+        response = client.get('/api/summary')
+        
+        assert response.status_code == 401
+
+    @patch('app.storage')
+    @patch('app.current_user')
+    def test_set_budget_missing_limit_amount(self, mock_current_user, mock_storage, client):
+        """Test setting budget with missing limit_amount."""
+        mock_current_user.return_value = {'id': 1, 'username': 'testuser'}
+        
+        response = client.post('/api/budget',
+                              data=json.dumps({'month': '2024-03'}),
+                              content_type='application/json')
+        
+        assert response.status_code == 400
+
+    @patch('app.storage')
+    @patch('app.current_user')
+    def test_set_budget_limit_amount_none(self, mock_current_user, mock_storage, client):
+        """Test setting budget with limit_amount as None."""
+        mock_current_user.return_value = {'id': 1, 'username': 'testuser'}
+        
+        response = client.post('/api/budget',
+                              data=json.dumps({'month': '2024-03', 'limit_amount': None}),
+                              content_type='application/json')
+        
+        assert response.status_code == 400
+
+    @patch('app.storage')
+    @patch('app.current_user')
+    def test_set_budget_empty_month_uses_default(self, mock_current_user, mock_storage, client):
+        """Test setting budget with empty month uses current month."""
+        mock_current_user.return_value = {'id': 1, 'username': 'testuser'}
+        mock_storage.upsert_budget.return_value = {
+            'id': 1,
+            'user_id': 1,
+            'month': '2024-01',
+            'limit_amount': 1000.0
+        }
+        mock_storage.get_budget_status.return_value = {
+            'month': '2024-01',
+            'limit': 1000.0,
+            'spent': 0.0,
+            'remaining': 1000.0,
+            'status': 'ok'
+        }
+        
+        response = client.post('/api/budget',
+                              data=json.dumps({'limit_amount': 1000.0}),
+                              content_type='application/json')
+        
+        assert response.status_code == 200
+
