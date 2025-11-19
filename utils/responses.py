@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping, Union
+from typing import Any, Mapping, Sequence, Union
 
-from flask import jsonify
+from flask import Response, jsonify
 
-JsonPayload = Union[Mapping[str, Any], list, str, int, float, None]
+JsonPayload = Union[Mapping[str, Any], Sequence[Any], str, int, float, None]
 
 
-def json_response(payload: JsonPayload, status: int = 200):
+def json_response(payload: JsonPayload, status: int = 200) -> tuple[Response, int]:
     """Return a Flask JSON response tuple."""
     return jsonify(payload), status
 
 
-def error_response(message: str, status: int = 400, **extra):
+def error_response(message: str, status: int = 400, **extra: Any) -> tuple[Response, int]:
     """Return a standardized error response."""
     body = {"error": message}
     if extra:

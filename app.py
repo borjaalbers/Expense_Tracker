@@ -1,5 +1,7 @@
 # app.py
-from flask import Flask, render_template, request, session, redirect, url_for
+from typing import Any, Dict, Optional, Tuple
+
+from flask import Flask, Response, render_template, request, session, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Use SQLite database storage exclusively
@@ -36,17 +38,22 @@ category_service = CategoryService(lambda: storage)
 # --------------------------
 # Helper utilities
 # --------------------------
-def current_user():
+def current_user() -> Optional[Dict[str, Any]]:
+    """Return the currently authenticated user or None."""
     uid = session.get("user_id")
     if not uid:
         return None
     return auth_service.get_user_by_id(uid)
 
-def login_user(user):
+
+def login_user(user: Dict[str, Any]) -> None:
+    """Persist authenticated user identifiers in the session."""
     session["user_id"] = user["id"]
     session["username"] = user["username"]
 
-def logout_user():
+
+def logout_user() -> None:
+    """Clear authentication information from the session."""
     session.pop("user_id", None)
     session.pop("username", None)
 
@@ -54,14 +61,16 @@ def logout_user():
 # Pages
 # --------------------------
 @app.route("/")
-def index():
-    # If logged in, redirect to dashboard
+def index() -> Response:
+    """Render the landing page or redirect authenticated users."""
     if current_user():
         return redirect(url_for("dashboard"))
     return render_template("index.html")
 
+
 @app.route("/dashboard")
-def dashboard():
+def dashboard() -> Response:
+    """Render the dashboard for authenticated users or redirect guests."""
     user = current_user()
     if not user:
         return redirect(url_for("index"))
@@ -72,14 +81,15 @@ def dashboard():
 # --------------------------
 @app.route("/api/signup", methods=["POST"])
 @require_json_body("username", "password", error_message="username and password required")
-def api_signup(json_data):
+def api_signup(json_data: Dict[str, Any]) -> tuple[Response, int]:
+    """Create a user from JSON credentials and establish a session."""
     try:
         username, password = validate_credentials(json_data)
     except ValidationError as exc:
         return error_response(str(exc), status=400)
     existing = auth_service.get_user_by_username(username)
     if existing:
-        return error_response("username already exists", status=400)
+        return error_response("username already exists", status=400, details="Choose a different username.")
     pw_hash = generate_password_hash(password)
     saved = auth_service.create_user(username, pw_hash)
     login_user(saved)
@@ -88,22 +98,22 @@ def api_signup(json_data):
 
 @app.route("/api/signin", methods=["POST"])
 @require_json_body("username", "password", error_message="username and password required")
-def api_signin(json_data):
+def api_signin(json_data: Dict[str, Any]) -> tuple[Response, int]:
+    """Authenticate existing users and start their session."""
     try:
         username, password = validate_credentials(json_data)
     except ValidationError as exc:
         return error_response(str(exc), status=400)
     user = auth_service.get_user_by_username(username)
-    if not user:
-        return error_response("invalid credentials", status=401)
-    if not check_password_hash(user.get("password_hash", ""), password):
-        return error_response("invalid credentials", status=401)
+    if not user or not check_password_hash(user.get("password_hash", ""), password):
+        return error_response("invalid credentials", status=401, details="Username or password is incorrect.")
     login_user(user)
     payload = {"message": "signed in", "user": {"id": user["id"], "username": user["username"]}}
     return json_response(payload, status=200)
 
 @app.route("/api/signout", methods=["POST"])
-def api_signout():
+def api_signout() -> tuple[Response, int]:
+    """Terminate the current session."""
     logout_user()
     return json_response({"message": "signed out"}, status=200)
 
@@ -112,7 +122,8 @@ def api_signout():
 # --------------------------
 @app.route("/api/expenses", methods=["POST"])
 @require_json_body("amount", error_message="Invalid or missing 'amount' (must be number)")
-def api_add_expense(json_data):
+def api_add_expense(json_data: Dict[str, Any]) -> tuple[Response, int]:
+    """Persist a new expense for the authenticated user."""
     user = current_user()
     if not user:
         return error_response("authentication required", status=401)
@@ -124,16 +135,17 @@ def api_add_expense(json_data):
     return json_response(saved, status=201)
 
 @app.route("/api/expenses", methods=["GET"])
-def api_list_expenses():
+def api_list_expenses() -> tuple[Response, int]:
+    """Return expenses for the authenticated user with optional filters."""
     user = current_user()
     if not user:
         return error_response("authentication required", status=401)
-    # optional filters
     category = request.args.get("category")
     date_from = request.args.get("date_from")
     date_to = request.args.get("date_to")
     items = expense_service.list_user_expenses(user["id"])
-    def in_range(it):
+
+    def in_range(it: Dict[str, Any]) -> bool:
         ds = it.get("date")
         if not ds:
             return True
@@ -142,29 +154,32 @@ def api_list_expenses():
         if date_to and ds > date_to:
             return False
         return True
+
     filtered = [it for it in items if (category is None or it.get("category") == category) and in_range(it)]
-    filtered.sort(key=lambda x: (x.get("date",""), x.get("id", 0)), reverse=True)
+    filtered.sort(key=lambda x: (x.get("date", ""), x.get("id", 0)), reverse=True)
     return json_response(filtered, status=200)
 
 @app.route("/api/expenses/<int:expense_id>", methods=["GET"])
-def api_get_expense(expense_id):
+def api_get_expense(expense_id: int) -> tuple[Response, int]:
+    """Return a specific expense owned by the authenticated user."""
     user = current_user()
     if not user:
         return error_response("authentication required", status=401)
     expense = expense_service.get_expense(expense_id)
     if not expense or expense.get("user_id") != user["id"]:
-        return error_response("not found", status=404)
+        return error_response("not found", status=404, details="Expense not found or not owned by the user.")
     return json_response(expense, status=200)
 
 @app.route("/api/expenses/<int:expense_id>", methods=["PUT"])
 @require_json_body()
-def api_update_expense(expense_id, json_data):
+def api_update_expense(expense_id: int, json_data: Dict[str, Any]) -> tuple[Response, int]:
+    """Update an expense with validated fields."""
     user = current_user()
     if not user:
         return error_response("authentication required", status=401)
     it = expense_service.get_expense(expense_id)
     if not it or it.get("user_id") != user["id"]:
-        return error_response("not found", status=404)
+        return error_response("not found", status=404, details="Expense not found or not owned by the user.")
     try:
         updates = build_expense_update(json_data)
     except ValidationError as exc:
@@ -173,23 +188,25 @@ def api_update_expense(expense_id, json_data):
     return json_response(updated, status=200)
 
 @app.route("/api/expenses/<int:expense_id>", methods=["DELETE"])
-def api_delete_expense(expense_id):
+def api_delete_expense(expense_id: int) -> tuple[Response, int]:
+    """Delete an expense for the authenticated user."""
     user = current_user()
     if not user:
         return error_response("authentication required", status=401)
     it = expense_service.get_expense(expense_id)
     if not it or it.get("user_id") != user["id"]:
-        return error_response("not found", status=404)
+        return error_response("not found", status=404, details="Expense not found or not owned by the user.")
     ok = expense_service.delete_expense(expense_id)
     if not ok:
-        return error_response("delete failed", status=500)
+        return error_response("delete failed", status=500, details="Expense could not be removed.")
     return json_response({"deleted": expense_id}, status=200)
 
 # --------------------------
 # Statistics endpoints
 # --------------------------
 @app.route("/api/summary", methods=["GET"])
-def api_summary():
+def api_summary() -> tuple[Response, int]:
+    """Return spending totals grouped by category for the current user."""
     user = current_user()
     if not user:
         return error_response("authentication required", status=401)
@@ -197,12 +214,12 @@ def api_summary():
     return json_response(sums, status=200)
 
 @app.route("/api/monthly", methods=["GET"])
-def api_monthly():
+def api_monthly() -> tuple[Response, int]:
+    """Return chronological monthly spending totals for the current user."""
     user = current_user()
     if not user:
         return error_response("authentication required", status=401)
     months = expense_service.monthly_totals(user["id"])
-    # sort months ascending
     sorted_months = dict(sorted(months.items()))
     return json_response(sorted_months, status=200)
 
@@ -211,7 +228,8 @@ def api_monthly():
 # Budget endpoints
 # --------------------------
 @app.route("/api/budget", methods=["GET"])
-def api_get_budget():
+def api_get_budget() -> tuple[Response, int]:
+    """Return budget status for the requested month."""
     user = current_user()
     if not user:
         return error_response("authentication required", status=401)
@@ -225,7 +243,8 @@ def api_get_budget():
 
 @app.route("/api/budget", methods=["POST"])
 @require_json_body()
-def api_set_budget(json_data):
+def api_set_budget(json_data: Dict[str, Any]) -> tuple[Response, int]:
+    """Create or update a budget for the requested month."""
     user = current_user()
     if not user:
         return error_response("authentication required", status=401)
@@ -243,7 +262,8 @@ def api_set_budget(json_data):
 # Categories endpoints
 # --------------------------
 @app.route("/api/categories", methods=["GET"])
-def api_list_categories():
+def api_list_categories() -> tuple[Response, int]:
+    """Return the categories available to the current user."""
     user = current_user()
     if not user:
         return error_response("authentication required", status=401)
@@ -253,7 +273,8 @@ def api_list_categories():
 
 @app.route("/api/categories", methods=["POST"])
 @require_json_body("name", error_message="name required")
-def api_add_category(json_data):
+def api_add_category(json_data: Dict[str, Any]) -> tuple[Response, int]:
+    """Create a new category for the current user."""
     user = current_user()
     if not user:
         return error_response("authentication required", status=401)
@@ -264,18 +285,19 @@ def api_add_category(json_data):
     try:
         cat = category_service.add_category(user["id"], name)
     except ValueError as e:
-        return error_response(str(e), status=400)
+        return error_response(str(e), status=400, details="Category names must be unique per user.")
     return json_response(cat, status=201)
 
 
 @app.route("/api/categories/<int:category_id>", methods=["DELETE"])
-def api_delete_category(category_id: int):
+def api_delete_category(category_id: int) -> tuple[Response, int]:
+    """Delete a category owned by the user."""
     user = current_user()
     if not user:
         return error_response("authentication required", status=401)
     ok = category_service.delete_category(user["id"], category_id)
     if not ok:
-        return error_response("not found", status=404)
+        return error_response("not found", status=404, details="Category not found or not owned by the user.")
     return json_response({"deleted": category_id}, status=200)
 
 
@@ -283,7 +305,8 @@ def api_delete_category(category_id: int):
 # Health
 # --------------------------
 @app.route("/api/health", methods=["GET"])
-def health():
+def health() -> tuple[Response, int]:
+    """Return a simple health payload for monitoring."""
     return json_response({"status": "ok", "user": session.get("username")}, status=200)
 
 # --------------------------

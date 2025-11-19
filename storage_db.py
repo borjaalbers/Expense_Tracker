@@ -302,51 +302,63 @@ class CategoryRepository(BaseRepository):
 
 # --- Users ---
 def get_all_users() -> List[Dict[str, Any]]:
+    """Return all users as dictionaries."""
     return UserRepository.list_all()
 
 
 def find_user_by_username(username: str) -> Optional[Dict[str, Any]]:
+    """Return user data searched by username."""
     return UserRepository.find_by_username(username)
 
 
 def find_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
+    """Return user data searched by id."""
     return UserRepository.find_by_id(user_id)
 
 
 def save_user(user: Dict[str, Any]) -> Dict[str, Any]:
+    """Persist a new user record."""
     return UserRepository.create(user)
 
 
 # --- Expenses ---
 def get_all_expenses() -> List[Dict[str, Any]]:
+    """Return every expense record."""
     return ExpenseRepository.list_all()
 
 
 def find_expense(expense_id: int) -> Optional[Dict[str, Any]]:
+    """Return an expense by id."""
     return ExpenseRepository.find(expense_id)
 
 
 def get_user_expenses(user_id: int) -> List[Dict[str, Any]]:
+    """Return expenses for the provided user."""
     return ExpenseRepository.list_for_user(user_id)
 
 
 def save_expense(expense: Dict[str, Any]) -> Dict[str, Any]:
+    """Insert a new expense row."""
     return ExpenseRepository.create(expense)
 
 
 def update_expense(expense_id: int, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Update an existing expense."""
     return ExpenseRepository.update(expense_id, updates)
 
 
 def delete_expense(expense_id: int) -> bool:
+    """Remove an expense row."""
     return ExpenseRepository.delete(expense_id)
 
 
 def summary_by_category(user_id: int) -> Dict[str, float]:
+    """Aggregate expenses by category."""
     return ExpenseRepository.summary_by_category(user_id)
 
 
 def monthly_totals(user_id: int) -> Dict[str, float]:
+    """Aggregate expenses by YYYY-MM month."""
     return ExpenseRepository.monthly_totals(user_id)
 
 
@@ -396,17 +408,21 @@ def get_budget_status(user_id: int, month: str) -> Dict[str, Any]:
 
 # --- Categories ---
 def _ensure_default_categories(user_id: int) -> None:
+    """Seed defaults if the user has no categories."""
     CategoryRepository.ensure_defaults(user_id)
 
 
 def list_categories(user_id: int) -> List[Dict[str, Any]]:
+    """Return all categories for the given user."""
     _ensure_default_categories(user_id)
     return CategoryRepository.list_for_user(user_id)
 
 
 def add_category(user_id: int, name: str) -> Dict[str, Any]:
+    """Insert a category for the given user."""
     return CategoryRepository.add(user_id, name)
 
 
 def delete_category(user_id: int, category_id: int) -> bool:
+    """Delete a category owned by the user."""
     return CategoryRepository.delete(user_id, category_id)

@@ -18,12 +18,15 @@ class BudgetService:
         return self._repo_provider()
 
     def get_budget(self, user_id: int, month: str) -> Optional[Dict[str, Any]]:
+        """Return the stored budget for a user-month pair."""
         return self.budget_repo.get_budget(user_id, month)
 
     def save_budget(self, user_id: int, month: str, limit_amount: float) -> Dict[str, Any]:
+        """Create or update a budget entry."""
         return self.budget_repo.upsert_budget(user_id, month, limit_amount)
 
     def get_budget_status(self, user_id: int, month: str) -> Dict[str, Any]:
+        """Return limit/spent/remaining metadata for a month."""
         return self.budget_repo.get_budget_status(user_id, month)
 
 
