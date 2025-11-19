@@ -48,11 +48,11 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Reduce code duplication in CRUD operations
 
 4. **Apply SOLID Principles**
-   - [ ] Single Responsibility: Separate concerns (auth, expenses, budgets, categories)
-   - [ ] Open/Closed: Use dependency injection where appropriate
-   - [ ] Liskov Substitution: Ensure interfaces are properly defined
-   - [ ] Interface Segregation: Create focused interfaces
-   - [ ] Dependency Inversion: Depend on abstractions
+   - [x] Single Responsibility: Separate concerns (auth, expenses, budgets, categories)
+   - [x] Open/Closed: Use dependency injection where appropriate
+   - [x] Liskov Substitution: Ensure interfaces are properly defined
+   - [x] Interface Segregation: Create focused interfaces
+   - [x] Dependency Inversion: Depend on abstractions
 
 5. **Code Quality Improvements**
    - [ ] Add type hints throughout
