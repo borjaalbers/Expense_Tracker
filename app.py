@@ -2,17 +2,18 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-import os
 
 # Use SQLite database storage exclusively
 from db import ENGINE
 from models import Base
 Base.metadata.create_all(bind=ENGINE)
 import storage_db as storage
+from config import Config
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
+app.config.from_object(Config)
 # Secret key for sessions - in production use env var
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-key-change-me")
+app.secret_key = Config.SECRET_KEY
 
 # --------------------------
 # Helper utilities
@@ -324,4 +325,4 @@ def health():
 # Run
 # --------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5001)), debug=True)
+    app.run(host=Config.HOST, port=Config.PORT, debug=Config.DEBUG)

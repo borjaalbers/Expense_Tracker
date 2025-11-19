@@ -8,6 +8,7 @@ from sqlalchemy.exc import NoResultFound
 
 from db import get_session
 from models import User, Expense, Budget, Category
+from config import Config
 
 
 # --- Users ---
@@ -241,20 +242,6 @@ def get_budget_status(user_id: int, month: str) -> Dict[str, Any]:
 
 
 # --- Categories ---
-DEFAULT_CATEGORIES: List[str] = [
-    "Food & Dining",
-    "Transportation",
-    "Shopping",
-    "Entertainment",
-    "Bills & Utilities",
-    "Healthcare",
-    "Education",
-    "Travel",
-    "Groceries",
-    "Other",
-]
-
-
 def _ensure_default_categories(user_id: int) -> None:
     with get_session() as session:
         existing = session.execute(
@@ -263,7 +250,7 @@ def _ensure_default_categories(user_id: int) -> None:
         if existing:
             return
         # Seed defaults
-        for name in DEFAULT_CATEGORIES:
+        for name in Config.DEFAULT_CATEGORIES:
             session.add(Category(user_id=user_id, name=name))
 
 
