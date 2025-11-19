@@ -1,7 +1,6 @@
 # app.py
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, session, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
 
 # Use SQLite database storage exclusively
 from db import ENGINE
@@ -9,6 +8,17 @@ from models import Base
 Base.metadata.create_all(bind=ENGINE)
 import storage_db as storage
 from config import Config
+from utils.responses import error_response, json_response
+from utils.validation import (
+    ValidationError,
+    build_expense_payload,
+    build_expense_update,
+    parse_budget_limit,
+    parse_month,
+    require_json_body,
+    validate_category_name,
+    validate_credentials,
+)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config.from_object(Config)
@@ -32,11 +42,6 @@ def logout_user():
     session.pop("user_id", None)
     session.pop("username", None)
 
-def require_login_json():
-    if not current_user():
-        return jsonify({"error": "authentication required"}), 401
-    return None
-
 # --------------------------
 # Pages
 # --------------------------
@@ -58,81 +63,63 @@ def dashboard():
 # Auth endpoints (JSON)
 # --------------------------
 @app.route("/api/signup", methods=["POST"])
-def api_signup():
-    data = request.get_json(force=True, silent=True) or {}
-    username = (data.get("username") or "").strip()
-    password = data.get("password") or ""
-    if not username or not password:
-        return jsonify({"error": "username and password required"}), 400
+@require_json_body("username", "password", error_message="username and password required")
+def api_signup(json_data):
+    try:
+        username, password = validate_credentials(json_data)
+    except ValidationError as exc:
+        return error_response(str(exc), status=400)
     if storage.find_user_by_username(username):
-        return jsonify({"error": "username already exists"}), 400
+        return error_response("username already exists", status=400)
     pw_hash = generate_password_hash(password)
     user = {"username": username, "password_hash": pw_hash}
     saved = storage.save_user(user)
     login_user(saved)
-    return jsonify({"message": "created", "user": {"id": saved["id"], "username": saved["username"]}}), 201
+    payload = {"message": "created", "user": {"id": saved["id"], "username": saved["username"]}}
+    return json_response(payload, status=201)
 
 @app.route("/api/signin", methods=["POST"])
-def api_signin():
-    data = request.get_json(force=True, silent=True) or {}
-    username = (data.get("username") or "").strip()
-    password = data.get("password") or ""
-    if not username or not password:
-        return jsonify({"error": "username and password required"}), 400
+@require_json_body("username", "password", error_message="username and password required")
+def api_signin(json_data):
+    try:
+        username, password = validate_credentials(json_data)
+    except ValidationError as exc:
+        return error_response(str(exc), status=400)
     user = storage.find_user_by_username(username)
     if not user:
-        return jsonify({"error": "invalid credentials"}), 401
+        return error_response("invalid credentials", status=401)
     if not check_password_hash(user.get("password_hash", ""), password):
-        return jsonify({"error": "invalid credentials"}), 401
+        return error_response("invalid credentials", status=401)
     login_user(user)
-    return jsonify({"message": "signed in", "user": {"id": user["id"], "username": user["username"]}}), 200
+    payload = {"message": "signed in", "user": {"id": user["id"], "username": user["username"]}}
+    return json_response(payload, status=200)
 
 @app.route("/api/signout", methods=["POST"])
 def api_signout():
     logout_user()
-    return jsonify({"message": "signed out"}), 200
+    return json_response({"message": "signed out"}, status=200)
 
 # --------------------------
 # Expense endpoints (JSON, per-user)
 # --------------------------
 @app.route("/api/expenses", methods=["POST"])
-def api_add_expense():
-    # require login
+@require_json_body("amount", error_message="Invalid or missing 'amount' (must be number)")
+def api_add_expense(json_data):
     user = current_user()
     if not user:
-        return jsonify({"error": "authentication required"}), 401
-    data = request.get_json(force=True, silent=True) or {}
+        return error_response("authentication required", status=401)
     try:
-        amount = float(data.get("amount"))
-        if amount <= 0:
-            return jsonify({"error": "Amount must be greater than 0"}), 400
-    except (TypeError, ValueError):
-        return jsonify({"error": "Invalid or missing 'amount' (must be number)"}), 400
-    category = data.get("category", "Uncategorized")
-    note = data.get("note", "")
-    date_str = data.get("date")
-    if date_str:
-        try:
-            datetime.fromisoformat(date_str)
-        except Exception:
-            return jsonify({"error": "Invalid 'date' format. Use YYYY-MM-DD."}), 400
-    else:
-        date_str = datetime.utcnow().date().isoformat()
-    expense = {
-        "user_id": user["id"],
-        "amount": amount,
-        "category": category,
-        "date": date_str,
-        "note": note
-    }
+        expense = build_expense_payload(user["id"], json_data)
+    except ValidationError as exc:
+        return error_response(str(exc), status=400)
     saved = storage.save_expense(expense)
-    return jsonify(saved), 201
+    return json_response(saved, status=201)
 
 @app.route("/api/expenses", methods=["GET"])
 def api_list_expenses():
     user = current_user()
     if not user:
-        return jsonify({"error": "authentication required"}), 401
+        return error_response("authentication required", status=401)
     # optional filters
     category = request.args.get("category")
     date_from = request.args.get("date_from")
@@ -149,63 +136,46 @@ def api_list_expenses():
         return True
     filtered = [it for it in items if (category is None or it.get("category") == category) and in_range(it)]
     filtered.sort(key=lambda x: (x.get("date",""), x.get("id", 0)), reverse=True)
-    return jsonify(filtered), 200
+    return json_response(filtered, status=200)
 
 @app.route("/api/expenses/<int:expense_id>", methods=["GET"])
 def api_get_expense(expense_id):
     user = current_user()
     if not user:
-        return jsonify({"error": "authentication required"}), 401
+        return error_response("authentication required", status=401)
     expense = storage.find_expense(expense_id)
     if not expense or expense.get("user_id") != user["id"]:
-        return jsonify({"error": "not found"}), 404
-    return jsonify(expense), 200
+        return error_response("not found", status=404)
+    return json_response(expense, status=200)
 
 @app.route("/api/expenses/<int:expense_id>", methods=["PUT"])
-def api_update_expense(expense_id):
+@require_json_body()
+def api_update_expense(expense_id, json_data):
     user = current_user()
     if not user:
-        return jsonify({"error": "authentication required"}), 401
+        return error_response("authentication required", status=401)
     it = storage.find_expense(expense_id)
     if not it or it.get("user_id") != user["id"]:
-        return jsonify({"error": "not found"}), 404
-    data = request.get_json(force=True, silent=True) or {}
-    allowed = {}
-    if "amount" in data:
-        try:
-            amount = float(data["amount"])
-            if amount <= 0:
-                return jsonify({"error": "Amount must be greater than 0"}), 400
-            allowed["amount"] = amount
-        except (TypeError, ValueError):
-            return jsonify({"error": "Invalid 'amount'"}), 400
-    if "category" in data:
-        allowed["category"] = data["category"]
-    if "date" in data:
-        try:
-            datetime.fromisoformat(data["date"])
-            allowed["date"] = data["date"]
-        except Exception:
-            return jsonify({"error": "Invalid 'date' format. Use YYYY-MM-DD."}), 400
-    if "note" in data:
-        allowed["note"] = data["note"]
-    if not allowed:
-        return jsonify({"error": "No valid update fields provided"}), 400
-    updated = storage.update_expense(expense_id, allowed)
-    return jsonify(updated), 200
+        return error_response("not found", status=404)
+    try:
+        updates = build_expense_update(json_data)
+    except ValidationError as exc:
+        return error_response(str(exc), status=400)
+    updated = storage.update_expense(expense_id, updates)
+    return json_response(updated, status=200)
 
 @app.route("/api/expenses/<int:expense_id>", methods=["DELETE"])
 def api_delete_expense(expense_id):
     user = current_user()
     if not user:
-        return jsonify({"error": "authentication required"}), 401
+        return error_response("authentication required", status=401)
     it = storage.find_expense(expense_id)
     if not it or it.get("user_id") != user["id"]:
-        return jsonify({"error": "not found"}), 404
+        return error_response("not found", status=404)
     ok = storage.delete_expense(expense_id)
     if not ok:
-        return jsonify({"error": "delete failed"}), 500
-    return jsonify({"deleted": expense_id}), 200
+        return error_response("delete failed", status=500)
+    return json_response({"deleted": expense_id}, status=200)
 
 # --------------------------
 # Statistics endpoints
@@ -214,19 +184,19 @@ def api_delete_expense(expense_id):
 def api_summary():
     user = current_user()
     if not user:
-        return jsonify({"error": "authentication required"}), 401
+        return error_response("authentication required", status=401)
     sums = storage.summary_by_category(user["id"])
-    return jsonify(sums), 200
+    return json_response(sums, status=200)
 
 @app.route("/api/monthly", methods=["GET"])
 def api_monthly():
     user = current_user()
     if not user:
-        return jsonify({"error": "authentication required"}), 401
+        return error_response("authentication required", status=401)
     months = storage.monthly_totals(user["id"])
     # sort months ascending
     sorted_months = dict(sorted(months.items()))
-    return jsonify(sorted_months), 200
+    return json_response(sorted_months, status=200)
 
 
 # --------------------------
@@ -236,43 +206,29 @@ def api_monthly():
 def api_get_budget():
     user = current_user()
     if not user:
-        return jsonify({"error": "authentication required"}), 401
-    month = request.args.get("month")
-    if not month:
-        # default to current month in UTC
-        month = datetime.utcnow().strftime("%Y-%m")
-    # validate YYYY-MM
+        return error_response("authentication required", status=401)
     try:
-        datetime.strptime(month + "-01", "%Y-%m-%d")
-    except Exception:
-        return jsonify({"error": "Invalid 'month' format. Use YYYY-MM."}), 400
+        month = parse_month(request.args.get("month"), default_to_current=True)
+    except ValidationError as exc:
+        return error_response(str(exc), status=400)
     status = storage.get_budget_status(user["id"], month)
-    return jsonify(status), 200
+    return json_response(status, status=200)
 
 
 @app.route("/api/budget", methods=["POST"])
-def api_set_budget():
+@require_json_body()
+def api_set_budget(json_data):
     user = current_user()
     if not user:
-        return jsonify({"error": "authentication required"}), 401
-    data = request.get_json(force=True, silent=True) or {}
-    month = (data.get("month") or "").strip()
-    limit_amount = data.get("limit_amount")
-    if not month:
-        month = datetime.utcnow().strftime("%Y-%m")
+        return error_response("authentication required", status=401)
     try:
-        datetime.strptime(month + "-01", "%Y-%m-%d")
-    except Exception:
-        return jsonify({"error": "Invalid 'month' format. Use YYYY-MM."}), 400
-    try:
-        limit_val = float(limit_amount)
-        if limit_val <= 0:
-            return jsonify({"error": "limit_amount must be greater than 0"}), 400
-    except (TypeError, ValueError):
-        return jsonify({"error": "Invalid or missing 'limit_amount' (must be number)"}), 400
+        month = parse_month(json_data.get("month"), default_to_current=True)
+        limit_val = parse_budget_limit(json_data.get("limit_amount"))
+    except ValidationError as exc:
+        return error_response(str(exc), status=400)
     saved = storage.upsert_budget(user["id"], month, limit_val)
     status = storage.get_budget_status(user["id"], month)
-    return jsonify({"budget": saved, "status": status}), 200
+    return json_response({"budget": saved, "status": status}, status=200)
 
 
 # --------------------------
@@ -282,36 +238,37 @@ def api_set_budget():
 def api_list_categories():
     user = current_user()
     if not user:
-        return jsonify({"error": "authentication required"}), 401
+        return error_response("authentication required", status=401)
     cats = storage.list_categories(user["id"])
-    return jsonify(cats), 200
+    return json_response(cats, status=200)
 
 
 @app.route("/api/categories", methods=["POST"])
-def api_add_category():
+@require_json_body("name", error_message="name required")
+def api_add_category(json_data):
     user = current_user()
     if not user:
-        return jsonify({"error": "authentication required"}), 401
-    data = request.get_json(force=True, silent=True) or {}
-    name = (data.get("name") or "").strip()
-    if not name:
-        return jsonify({"error": "name required"}), 400
+        return error_response("authentication required", status=401)
+    try:
+        name = validate_category_name(json_data.get("name"))
+    except ValidationError as exc:
+        return error_response(str(exc), status=400)
     try:
         cat = storage.add_category(user["id"], name)
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    return jsonify(cat), 201
+        return error_response(str(e), status=400)
+    return json_response(cat, status=201)
 
 
 @app.route("/api/categories/<int:category_id>", methods=["DELETE"])
 def api_delete_category(category_id: int):
     user = current_user()
     if not user:
-        return jsonify({"error": "authentication required"}), 401
+        return error_response("authentication required", status=401)
     ok = storage.delete_category(user["id"], category_id)
     if not ok:
-        return jsonify({"error": "not found"}), 404
-    return jsonify({"deleted": category_id}), 200
+        return error_response("not found", status=404)
+    return json_response({"deleted": category_id}, status=200)
 
 
 # --------------------------
@@ -319,7 +276,7 @@ def api_delete_category(category_id: int):
 # --------------------------
 @app.route("/api/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "user": session.get("username")}), 200
+    return json_response({"status": "ok", "user": session.get("username")}, status=200)
 
 # --------------------------
 # Run

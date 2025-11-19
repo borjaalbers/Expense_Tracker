@@ -36,11 +36,11 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Use environment variables with sensible defaults
 
 2. **Refactor `app.py`**
-   - [ ] Extract validation logic into separate functions/classes
-   - [ ] Create request validation decorators/helpers
-   - [ ] Split long route handlers into smaller functions
-   - [ ] Extract date parsing/validation into utility functions
-   - [ ] Create response formatting helpers
+   - [x] Extract validation logic into separate functions/classes
+   - [x] Create request validation decorators/helpers
+   - [x] Split long route handlers into smaller functions
+   - [x] Extract date parsing/validation into utility functions
+   - [x] Create response formatting helpers
 
 3. **Refactor `storage_db.py`**
    - [ ] Extract common query patterns
