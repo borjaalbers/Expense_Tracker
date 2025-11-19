@@ -43,9 +43,9 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Create response formatting helpers
 
 3. **Refactor `storage_db.py`**
-   - [ ] Extract common query patterns
-   - [ ] Create base repository class following Repository pattern
-   - [ ] Reduce code duplication in CRUD operations
+   - [x] Extract common query patterns
+   - [x] Create base repository class following Repository pattern
+   - [x] Reduce code duplication in CRUD operations
 
 4. **Apply SOLID Principles**
    - [ ] Single Responsibility: Separate concerns (auth, expenses, budgets, categories)
