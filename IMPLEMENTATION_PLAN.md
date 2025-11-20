@@ -108,7 +108,7 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Ensure all critical paths are covered
 
 4. **Test Configuration**
-   - [x] Update `pytest.ini` with coverage settings
+   - [x] Update `pytest.ini` with coverage & lint settings (Ruff)
    - [x] Add coverage threshold configuration
    - [x] Set up test database fixtures properly
    - [x] Add test data factories if needed

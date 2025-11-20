@@ -173,7 +173,7 @@ expense_tracker/
 
 ##  Running Tests
 
-This project includes comprehensive backend tests (unit + integration) with 98% coverage.
+This project includes comprehensive backend tests (unit + integration) with 98% coverage and Ruff linting.
 
 ### Install Test Dependencies
 ```bash
@@ -183,6 +183,11 @@ pip install pytest pytest-cov
 ### Run All Tests
 ```bash
 pytest
+```
+
+### Run Lint (Ruff)
+```bash
+ruff check .
 ```
 
 ### Run Tests with Coverage Report

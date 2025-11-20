@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from typing import Iterator
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 
 def _get_database_url() -> str:
@@ -25,9 +25,7 @@ SessionLocal = sessionmaker(bind=ENGINE, autoflush=False, autocommit=False, futu
 
 
 @contextmanager
-def get_session() -> Iterator["Session"]:
-    from sqlalchemy.orm import Session  # local import for type checker
-
+def get_session() -> Iterator[Session]:
     session: Session = SessionLocal()
     try:
         yield session

@@ -6,9 +6,10 @@ import os
 
 # Use SQLite database storage exclusively
 from db import ENGINE
-from models import Base
-Base.metadata.create_all(bind=ENGINE)
 import storage_db as storage
+from models import Base
+
+Base.metadata.create_all(bind=ENGINE)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 # Secret key for sessions - in production use env var

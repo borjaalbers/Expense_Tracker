@@ -3,8 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import select, func, update, delete
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy import select, func
 
 from db import get_session
 from models import User, Expense, Budget, Category
