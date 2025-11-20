@@ -243,7 +243,7 @@ class CategoryRepository(BaseRepository):
 
     @classmethod
     def _ensure_defaults(cls, session: Session, user_id: int) -> None:
-        existing = cls._scalars(session, select(cls.model).where(cls.model.user_id == user_id))
+        existing = session.execute(select(cls.model).where(cls.model.user_id == user_id)).scalars().all()
         if existing:
             return
         for name in Config.DEFAULT_CATEGORIES:

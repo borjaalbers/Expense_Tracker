@@ -1,16 +1,13 @@
 # app.py
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from flask import Flask, Response, render_template, request, session, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from config import Config
 # Use SQLite database storage exclusively
 from db import ENGINE
 from models import Base
-
-Base.metadata.create_all(bind=ENGINE)
-
-from config import Config
 from services import AuthService, BudgetService, CategoryService, ExpenseService
 import storage_db as storage  # Backwards compatibility for tests
 from utils.responses import error_response, json_response
@@ -27,6 +24,8 @@ from utils.validation import (
     validate_category_name,
     validate_credentials,
 )
+
+Base.metadata.create_all(bind=ENGINE)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config.from_object(Config)
@@ -55,6 +54,11 @@ def require_auth() -> Optional[tuple[Response, int]]:
     if not user:
         return error_response("authentication required", status=401)
     return None
+
+
+def require_login_json() -> Optional[tuple[Response, int]]:
+    """Backward-compatible helper used in legacy tests (alias of require_auth)."""
+    return require_auth()
 
 
 def check_expense_ownership(expense: Optional[Dict[str, Any]], user_id: int) -> bool:
