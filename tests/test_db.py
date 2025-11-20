@@ -1,6 +1,7 @@
 """
 Unit tests for db.py database configuration.
 """
+import os
 import pytest
 from unittest.mock import patch, MagicMock
 import db
@@ -9,6 +10,7 @@ import db
 class TestDatabaseConfig:
     """Test database configuration and utilities."""
 
+    @patch.dict(os.environ, {}, clear=True)
     def test_get_database_url_default(self):
         """Test default database URL generation."""
         url = db._get_database_url()
@@ -16,7 +18,7 @@ class TestDatabaseConfig:
         assert 'sqlite:///' in url
         assert 'expense_tracker.db' in url
 
-    @patch.dict('os.environ', {'DATABASE_URL': 'sqlite:///custom.db'})
+    @patch.dict(os.environ, {'DATABASE_URL': 'sqlite:///custom.db'}, clear=True)
     def test_get_database_url_from_env(self):
         """Test database URL from environment variable."""
         url = db._get_database_url()
