@@ -109,7 +109,7 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Ensure all critical paths are covered
 
 4. **Test Configuration**
-   - [x] Update `pytest.ini` with coverage settings
+   - [x] Update `pytest.ini` with coverage & lint settings (Ruff)
    - [x] Add coverage threshold configuration
    - [x] Set up test database fixtures properly
    - [x] Add test data factories if needed
@@ -155,29 +155,29 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 >>>>>>> testing
 
 2. **Test Job**
-   - [ ] Install dependencies
-   - [ ] Run linting (optional: add flake8/black)
-   - [ ] Run unit tests
-   - [ ] Run integration tests
-   - [ ] Generate coverage report
-   - [ ] Check coverage threshold (≥ 70%)
-   - [ ] Upload coverage artifacts
+   - [x] Install dependencies
+   - [x] Run linting (optional: add flake8/black)
+   - [x] Run unit tests
+   - [x] Run integration tests
+   - [x] Generate coverage report
+   - [x] Check coverage threshold (≥ 70%)
+   - [x] Upload coverage artifacts
 
 3. **Build Job**
-   - [ ] Verify application can be imported
-   - [ ] Check all dependencies install correctly
-   - [ ] Validate configuration
+   - [x] Verify application can be imported
+   - [x] Check all dependencies install correctly
+   - [x] Validate configuration
 
 4. **Pipeline Configuration**
-   - [ ] Set up triggers (push, pull_request)
-   - [ ] Configure failure conditions
-   - [ ] Add status badges to README
-   - [ ] Set up coverage reporting (Codecov optional)
+   - [x] Set up triggers (push, pull_request, workflow_dispatch)
+   - [x] Configure failure conditions (matrix fail-fast disabled, coverage gate)
+   - [x] Add status badges to README
+   - [x] Set up coverage reporting (HTML artifact via Actions)
 
 5. **Secrets Management**
-   - [ ] Document required environment variables
-   - [ ] Use GitHub Secrets for sensitive values
-   - [ ] Add example `.env.example` file
+   - [x] Document required environment variables
+   - [x] Use GitHub Secrets for sensitive values
+   - [x] Add example `.env.example` file
 
 #### Files to Create:
 - `.github/workflows/ci.yml` (new)

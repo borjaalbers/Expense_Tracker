@@ -2,5 +2,10 @@
 __pycache__/
 *.pyc
 .env
+.env.*
+!.env.example
 users.json
 expenses.json
+htmlcov/
+db.sqlite3
+.pytest_cache/
