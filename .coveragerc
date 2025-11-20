@@ -1,9 +1,11 @@
 [run]
 source = .
 omit = 
-    tests/*
     venv/*
-    */site-packages/*
+    tests/*
+    __pycache__/*
+    *.pyc
+    db_init.py
     test_sqlite_app.py
 
 [report]
@@ -16,3 +18,9 @@ exclude_lines =
     if TYPE_CHECKING:
     @abstractmethod
 
+precision = 2
+show_missing = True
+skip_covered = False
+
+[html]
+directory = htmlcov

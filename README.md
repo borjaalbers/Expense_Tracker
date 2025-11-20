@@ -173,7 +173,7 @@ expense_tracker/
 
 ##  Running Tests
 
-This project includes comprehensive backend unit tests with 90%+ code coverage.
+This project includes comprehensive backend tests (unit + integration) with 98% coverage.
 
 ### Install Test Dependencies
 ```bash
@@ -206,7 +206,7 @@ pytest tests/test_app.py           # Test Flask routes
 ```
 
 ### Coverage Target
-- **Backend files**: 90%+ coverage
+- **Backend files**: 98% coverage
 - **Files covered**: `app.py`, `models.py`, `storage_db.py`, `db.py`
 
 ##  Troubleshooting

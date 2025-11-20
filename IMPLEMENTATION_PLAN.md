@@ -88,35 +88,37 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 #### Tasks:
 
 1. **Enhance Unit Tests**
-   - [ ] Review current test coverage
-   - [ ] Add missing test cases for edge cases
-   - [ ] Test all error paths
-   - [ ] Test validation functions
-   - [ ] Test utility functions
+=======
+   - [x] Review current test coverage
+   - [x] Add missing test cases for edge cases
+   - [x] Test all error paths
+   - [x] Test validation functions
+   - [x] Test utility functions
 
 2. **Add Integration Tests**
-   - [ ] Test full user workflows (signup → add expense → view dashboard)
-   - [ ] Test database operations end-to-end
-   - [ ] Test authentication flow
-   - [ ] Test budget calculation logic
-   - [ ] Test category management flow
+   - [x] Test full user workflows (signup → add expense → view dashboard)
+   - [x] Test database operations end-to-end
+   - [x] Test authentication flow
+   - [x] Test budget calculation logic
+   - [x] Test category management flow
 
 3. **Coverage Analysis**
-   - [ ] Run coverage report: `pytest --cov=. --cov-report=html --cov-report=term`
-   - [ ] Identify gaps in coverage
-   - [ ] Add tests to reach 70%+ coverage
-   - [ ] Ensure all critical paths are covered
+   - [x] Run coverage report: `pytest --cov=. --cov-report=html --cov-report=term`
+   - [x] Identify gaps in coverage
+   - [x] Add tests to reach 70%+ coverage
+   - [x] Ensure all critical paths are covered
 
 4. **Test Configuration**
-   - [ ] Update `pytest.ini` with coverage settings
-   - [ ] Add coverage threshold configuration
-   - [ ] Set up test database fixtures properly
-   - [ ] Add test data factories if needed
+   - [x] Update `pytest.ini` with coverage settings
+   - [x] Add coverage threshold configuration
+   - [x] Set up test database fixtures properly
+   - [x] Add test data factories if needed
 
 5. **Generate Coverage Report**
-   - [ ] Add coverage report to repository
-   - [ ] Document how to view coverage report
-   - [ ] Add `.coveragerc` or `pyproject.toml` for coverage config
+   - [x] Add coverage report to repository
+   - [x] Document how to view coverage report
+   - [x] Add `.coveragerc` or `pyproject.toml` for coverage config
+>>>>>>> testing
 
 #### Files to Create/Modify:
 - `tests/test_integration.py` (new)
@@ -146,9 +148,11 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 #### Tasks:
 
 1. **Set Up GitHub Actions**
-   - [ ] Create `.github/workflows/ci.yml`
-   - [ ] Configure Python version matrix (3.9, 3.10, 3.11)
-   - [ ] Set up job dependencies
+=======
+   - [x] Create `.github/workflows/ci.yml`
+   - [x] Configure Python version matrix (3.9, 3.10, 3.11)
+   - [x] Set up job dependencies
+>>>>>>> testing
 
 2. **Test Job**
    - [ ] Install dependencies
