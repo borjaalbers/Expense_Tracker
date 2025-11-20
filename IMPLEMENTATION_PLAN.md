@@ -171,9 +171,9 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Set up coverage reporting (HTML artifact via Actions)
 
 5. **Secrets Management**
-   - [ ] Document required environment variables
-   - [ ] Use GitHub Secrets for sensitive values
-   - [ ] Add example `.env.example` file
+   - [x] Document required environment variables
+   - [x] Use GitHub Secrets for sensitive values
+   - [x] Add example `.env.example` file
 
 #### Files to Create:
 - `.github/workflows/ci.yml` (new)

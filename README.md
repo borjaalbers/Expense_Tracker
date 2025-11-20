@@ -192,6 +192,24 @@ pytest
 ruff check .
 ```
 
+## Environment Variables & Secrets
+
+| Variable | Required | Default | Description / Where to Set |
+|----------|----------|---------|-----------------------------|
+| `FLASK_SECRET_KEY` | ✅ | `dev-secret-key-change-me` | Flask session key. Store in `.env` locally and as a GitHub Action secret for CI/deploy. |
+| `DATABASE_URL` | ➖ | SQLite file in repo | Override to use Postgres/MySQL; set in `.env` or GitHub Secrets. |
+| `PORT` | ➖ | `5001` | Local/server port; most cloud hosts inject automatically. |
+| `DEFAULT_CATEGORIES` | ➖ | Built-in list | Customize seeded categories via comma-separated string. |
+
+**Local development**
+1. Copy `.env.example` → `.env`
+2. Populate keys (`FLASK_SECRET_KEY`, optional `DATABASE_URL`, etc.)
+3. `source .env` (macOS/Linux) or use your IDE/terminal env var support
+
+**GitHub Actions / Deployment**
+- Add the same secrets under *Settings → Secrets and variables → Actions* (e.g., `FLASK_SECRET_KEY`, `DATABASE_URL`)
+- The CI workflow automatically exports them when present, keeping sensitive values out of the repo
+
 ##  CI/CD Pipeline
 
 - **GitHub Actions**: `.github/workflows/ci.yml` runs on every `push`, `pull_request`, and manual `workflow_dispatch`.
