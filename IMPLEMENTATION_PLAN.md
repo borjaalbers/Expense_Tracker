@@ -59,13 +59,16 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Add docstrings to all functions/classes
    - [x] Remove any dead code
    - [x] Improve error messages
+   - [x] Extract expense filtering logic to utility functions
+   - [x] Create authentication helper to reduce duplication
+   - [x] Extract expense ownership checking to utility function
 
 #### Files to Create/Modify:
-- `config.py` (new)
-- `app.py` (refactor)
-- `storage_db.py` (refactor)
-- `utils/validation.py` (new)
-- `utils/responses.py` (new)
+- `config.py` (new) ✓
+- `app.py` (refactor) ✓
+- `storage_db.py` (refactor) ✓
+- `utils/validation.py` (new) ✓
+- `utils/responses.py` (new) ✓
 
 #### Success Criteria:
 - No hardcoded values in business logic
@@ -101,7 +104,7 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 3. **Coverage Analysis**
    - [x] Run coverage report: `pytest --cov=. --cov-report=html --cov-report=term`
    - [x] Identify gaps in coverage
-   - [x] Add tests to reach 70%+ coverage (achieved 98.23% coverage)
+   - [x] Add tests to reach 70%+ coverage
    - [x] Ensure all critical paths are covered
 
 4. **Test Configuration**
@@ -116,12 +119,12 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Add `.coveragerc` or `pyproject.toml` for coverage config
 
 #### Files to Create/Modify:
-- `tests/test_integration.py` (new) ✓
-- `tests/test_utils.py` (new) - Not needed (no separate utils module)
-- `tests/test_validation.py` (new) - Not needed (validation tested in app tests)
-- `pytest.ini` (update) ✓
-- `.coveragerc` (new) ✓
-- `tests/README.md` (update) ✓
+- `tests/test_integration.py` (new)
+- `tests/test_utils.py` (new)
+- `tests/test_validation.py` (new)
+- `pytest.ini` (update)
+- `.coveragerc` (new)
+- `tests/README.md` (update)
 
 #### Success Criteria:
 - Coverage ≥ 70% for all backend files
@@ -143,9 +146,9 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 #### Tasks:
 
 1. **Set Up GitHub Actions**
-   - [ ] Create `.github/workflows/ci.yml`
-   - [ ] Configure Python version matrix (3.9, 3.10, 3.11)
-   - [ ] Set up job dependencies
+   - [x] Create `.github/workflows/ci.yml`
+   - [x] Configure Python version matrix (3.9, 3.10, 3.11)
+   - [x] Set up job dependencies
 
 2. **Test Job**
    - [ ] Install dependencies
