@@ -84,7 +84,7 @@ Integration tests for end-to-end workflows:
 | **app.py** | 251 | 8 | **96.81%**  |
 | **Total** | **451** | **8** | **98.23%**  |
 
-**All 134 tests passing (120 unit + 14 integration)** 
+**All 139 tests passing (134 unit + 5 integration)** 
 
 ## Writing New Tests
 

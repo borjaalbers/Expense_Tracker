@@ -1,12 +1,12 @@
 # Testing Summary
 
 ## Overview
-Comprehensive backend unit tests with **93% overall coverage** (exceeding 90% requirement).
+Comprehensive backend unit and integration tests with **98.23% overall coverage** (exceeding 90% requirement).
 
 ## Test Statistics
-- **Total Tests**: 99
-- **Pass Rate**: 100% (99/99 passed)
-- **Test Execution Time**: ~1.16 seconds
+- **Total Tests**: 139
+- **Pass Rate**: 100% (139/139 passed)
+- **Test Execution Time**: ~2.7 seconds
 
 ## Coverage by Module
 
@@ -14,17 +14,17 @@ Comprehensive backend unit tests with **93% overall coverage** (exceeding 90% re
 |--------|-----------|--------|----------|
 | **models.py** | 37 | 0 | **100%** |
 | **db.py** | 21 | 0 | **100%** |
-| **storage_db.py** | 142 | 8 | **94%**  |
-| **app.py** | 251 | 22 | **91%**  |
-| **Overall** | **451** | **30** | **93%**  |
+| **storage_db.py** | 142 | 0 | **100%**  |
+| **app.py** | 251 | 8 | **96.81%**  |
+| **Overall** | **451** | **8** | **98.23%**  |
 
 ### Analysis
 - **models.py**: Perfect 100% coverage - all constraints, relationships, and validations tested
 - **db.py**: Perfect 100% coverage - engine creation, session management, context manager behavior tested
-- **storage_db.py**: 94% coverage - all CRUD operations, analytics, budgets, categories, and edge cases tested
-- **app.py**: 91% coverage - all API routes, authentication, authorization, validation, and error paths tested
+- **storage_db.py**: Perfect 100% coverage - CRUD, analytics, budgeting, category management, and edge cases tested
+- **app.py**: 96.81% coverage - all API routes, authentication, authorization, validation, and error paths tested
 
-The **93% overall backend coverage** significantly exceeds the 90% requirement.
+The **98.23% overall backend coverage** significantly exceeds the 90% requirement.
 
 ## Test Structure
 
@@ -60,7 +60,7 @@ Tests for data access layer:
 -  Date conversion edge cases
 -  Budget threshold scenarios (90% warning, over-budget)
 
-### tests/test_app.py (48 tests)
+### tests/test_app.py (50 tests)
 Tests for Flask routes:
 -  Signup/signin/signout flows
 -  Duplicate username prevention
@@ -79,6 +79,14 @@ Tests for Flask routes:
 -  Error handling (400, 401, 404, 500)
 
 ### tests/test_db.py (7 tests)
+
+### tests/test_integration.py (5 tests)
+Integration tests using an in-memory SQLite database:
+- Full user workflow (signup → add expense → dashboard)
+- Authentication flow across signin/signout
+- Budget CRUD operations and status thresholds
+- Category management lifecycle
+- Database CRUD verification end-to-end
 Tests for database configuration:
 -  Default database URL generation
 -  Environment variable override (DATABASE_URL)
@@ -97,18 +105,19 @@ Tests for database configuration:
 
 ### 2. Mocking Strategy
 - External dependencies mocked (storage layer in route tests)
-- Database operations tested with real SQLAlchemy
+- Integration tests exercise real SQLAlchemy on an isolated in-memory database
 - Session management properly isolated
 
 ### 3. Coverage Focus
 - **All core features tested**: Authentication, CRUD, budgeting, categories, analytics
 - **Error paths tested**: Invalid inputs, not-found cases, authorization failures
-- **Edge cases tested**: Duplicate usernames, wrong user access, cascade deletes
+- **Edge cases tested**: Duplicate usernames, wrong user access, cascade deletes, budget thresholds
 
 ### 4. Maintainability
 - Clear test naming (test_feature_scenario)
 - Organized into logical test classes
 - Fixtures for common setup (users, expenses, sessions)
+- Integration fixtures patch storage to in-memory DB
 - Comprehensive docstrings
 
 ## Running Tests
@@ -136,19 +145,19 @@ These tests are ready for integration into CI/CD pipelines:
 - Coverage reports for tracking
 
 ## Future Enhancements
-Additional improvements beyond 93%:
-1. Add integration tests for full request→response flows with real database
+Additional improvements beyond the current suite:
+1. Add performance/load tests for high-volume expense imports
 2. Add edge case tests for date/time boundary conditions (month boundaries, leap years)
 3. Test concurrent user scenarios and race conditions
-4. Add performance/load tests
-5. Test CSV export/import features (when implemented)
+4. Test CSV export/import features (when implemented)
+5. Integrate browser-based end-to-end tests for the UI
 
 ## Conclusion
-**Backend unit tests exceed all requirements**
-- **99 tests** covering all major features and edge cases
-- **93% overall coverage** (exceeds 90% requirement)
+**Backend tests exceed all requirements**
+- **139 tests** covering unit, storage, and integration scenarios
+- **98.23% overall coverage** (exceeds 90% requirement)
 - **100% pass rate** - all tests passing
-- **Fast execution** - ~1.16 seconds
+- **Fast execution** - ~2.7 seconds
 - **Well-organized and maintainable** - clear structure, fixtures, mocking
 - **CI/CD ready** - no external dependencies, deterministic results
 
