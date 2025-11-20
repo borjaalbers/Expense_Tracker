@@ -165,10 +165,10 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Validate configuration
 
 4. **Pipeline Configuration**
-   - [ ] Set up triggers (push, pull_request)
-   - [ ] Configure failure conditions
-   - [ ] Add status badges to README
-   - [ ] Set up coverage reporting (Codecov optional)
+   - [x] Set up triggers (push, pull_request, workflow_dispatch)
+   - [x] Configure failure conditions (matrix fail-fast disabled, coverage gate)
+   - [x] Add status badges to README
+   - [x] Set up coverage reporting (HTML artifact via Actions)
 
 5. **Secrets Management**
    - [ ] Document required environment variables

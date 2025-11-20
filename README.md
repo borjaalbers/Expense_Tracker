@@ -1,5 +1,7 @@
 # Expense Tracker - Full Stack Web Application
 
+[![CI](https://github.com/borja/Expense_Tracker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/borja/Expense_Tracker/actions/workflows/ci.yml)
+
 A modern, full-stack expense tracking application built with Flask and SQLite. Features user authentication, CRUD operations, data visualization, and responsive design.
 
 ##  Features
@@ -189,6 +191,13 @@ pytest
 ```bash
 ruff check .
 ```
+
+##  CI/CD Pipeline
+
+- **GitHub Actions**: `.github/workflows/ci.yml` runs on every `push`, `pull_request`, and manual `workflow_dispatch`.
+- **Test job**: Matrix across Python 3.9–3.11 installs deps, runs Ruff lint, executes unit + integration tests with coverage enforcement (`--cov-fail-under=70`), and uploads the HTML coverage report as an artifact.
+- **Build job**: Runs after tests to install dependencies on Python 3.11, import critical modules (`app`, `storage_db`), and perform a lightweight configuration sanity check so the pipeline fails if the app cannot start.
+- **Badges & artifacts**: The badge above reflects the latest CI status; download `htmlcov` artifacts from the Actions tab for coverage inspection.
 
 ### Run Tests with Coverage Report
 ```bash
