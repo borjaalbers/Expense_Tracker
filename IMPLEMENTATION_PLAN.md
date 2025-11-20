@@ -151,13 +151,13 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Set up job dependencies
 
 2. **Test Job**
-   - [ ] Install dependencies
+   - [x] Install dependencies
    - [ ] Run linting (optional: add flake8/black)
-   - [ ] Run unit tests
-   - [ ] Run integration tests
-   - [ ] Generate coverage report
-   - [ ] Check coverage threshold (≥ 70%)
-   - [ ] Upload coverage artifacts
+   - [x] Run unit tests
+   - [x] Run integration tests
+   - [x] Generate coverage report
+   - [x] Check coverage threshold (≥ 70%)
+   - [x] Upload coverage artifacts
 
 3. **Build Job**
    - [ ] Verify application can be imported
