@@ -152,7 +152,7 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 
 2. **Test Job**
    - [x] Install dependencies
-   - [ ] Run linting (optional: add flake8/black)
+   - [x] Run linting (optional: add flake8/black)
    - [x] Run unit tests
    - [x] Run integration tests
    - [x] Generate coverage report
@@ -160,9 +160,9 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Upload coverage artifacts
 
 3. **Build Job**
-   - [ ] Verify application can be imported
-   - [ ] Check all dependencies install correctly
-   - [ ] Validate configuration
+   - [x] Verify application can be imported
+   - [x] Check all dependencies install correctly
+   - [x] Validate configuration
 
 4. **Pipeline Configuration**
    - [ ] Set up triggers (push, pull_request)
