@@ -231,9 +231,9 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Use specific Python version tags
 
 5. **Documentation**
-   - [ ] Add Docker build instructions
-   - [ ] Add docker-compose usage instructions
-   - [ ] Document environment variables
+   - [x] Add Docker build instructions
+   - [x] Add docker-compose usage instructions
+   - [x] Document environment variables
 
 #### Files to Create:
 - `Dockerfile` (new)
