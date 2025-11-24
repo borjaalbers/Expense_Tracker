@@ -1,0 +1,24 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+htmlcov/
+.coverage*
+
+# Local databases and temp data
+expense_tracker.db
+*.sqlite3
+*.db
+/data/
+
+# Development artifacts
+.DS_Store
+*.log
+
+# Tests (not needed inside runtime image)
+tests/
+pytest.ini
+

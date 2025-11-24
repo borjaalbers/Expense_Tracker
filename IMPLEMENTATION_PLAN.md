@@ -213,10 +213,10 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Optimize layers for caching
 
 2. **Create .dockerignore**
-   - [ ] Exclude virtual environment
-   - [ ] Exclude test files (unless needed)
-   - [ ] Exclude database files
-   - [ ] Exclude IDE files
+   - [x] Exclude virtual environment
+   - [x] Exclude test files (unless needed)
+   - [x] Exclude database files
+   - [x] Exclude IDE files
 
 3. **Create docker-compose.yml**
    - [ ] Define Flask app service
