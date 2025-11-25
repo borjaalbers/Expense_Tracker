@@ -66,6 +66,123 @@ python app.py
 ### 6. Access the Application
 Open your browser and navigate to: `http://localhost:5001`
 
+## 🐳 Docker Deployment
+
+### Prerequisites
+- Docker Desktop installed and running
+- Docker Compose (included with Docker Desktop)
+
+### Quick Start with Docker Compose
+
+1. **Build and start the application:**
+   ```bash
+   docker compose up --build
+   ```
+
+2. **Access the application:**
+   Open your browser and navigate to: `http://localhost:5001`
+
+3. **Stop the application:**
+   Press `Ctrl+C` in the terminal, or run:
+   ```bash
+   docker compose down
+   ```
+
+### Docker Build Instructions
+
+**Build the Docker image:**
+```bash
+docker build -t expense-tracker .
+```
+
+**Run the container:**
+```bash
+docker run -p 5001:5001 \
+  -e FLASK_SECRET_KEY=your-secret-key \
+  -e DATABASE_URL=sqlite:////data/expense_tracker.db \
+  -v expense_data:/data \
+  expense-tracker
+```
+
+### Docker Compose Usage
+
+**Start services:**
+```bash
+docker compose up
+```
+
+**Start in detached mode (background):**
+```bash
+docker compose up -d
+```
+
+**View logs:**
+```bash
+docker compose logs -f
+```
+
+**Stop services:**
+```bash
+docker compose down
+```
+
+**Rebuild after code changes:**
+```bash
+docker compose up --build
+```
+
+**View running containers:**
+```bash
+docker compose ps
+```
+
+### Environment Variables
+
+The following environment variables can be configured:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FLASK_SECRET_KEY` | `dev-secret-key-change-me` | Secret key for Flask sessions (required in production) |
+| `DATABASE_URL` | `sqlite:////data/expense_tracker.db` | Database connection URL |
+| `PORT` | `5001` | Port on which the application runs |
+
+**Setting environment variables:**
+
+**With docker-compose:**
+Create a `.env` file in the project root:
+```env
+FLASK_SECRET_KEY=your-production-secret-key-here
+DATABASE_URL=sqlite:////data/expense_tracker.db
+PORT=5001
+```
+
+**With docker run:**
+```bash
+docker run -p 5001:5001 \
+  -e FLASK_SECRET_KEY=your-secret-key \
+  -e PORT=5001 \
+  expense-tracker
+```
+
+### Database Persistence
+
+The application uses a Docker volume (`expense_data`) to persist the SQLite database. This ensures your data survives container restarts.
+
+**View volume:**
+```bash
+docker volume ls
+```
+
+**Inspect volume:**
+```bash
+docker volume inspect expense_tracker_expense_data
+```
+
+**Remove volume (⚠️ deletes all data):**
+```bash
+docker compose down -v
+```
+
 ##  How to Use
 
 1. **Sign Up**: Create a new account on the landing page
