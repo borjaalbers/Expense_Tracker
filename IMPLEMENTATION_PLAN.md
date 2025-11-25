@@ -259,9 +259,46 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 #### Tasks:
 
 1. **Choose Deployment Platform**
-   - [ ] Evaluate options: Heroku, Railway, Render, Fly.io
-   - [ ] Select platform (recommendation: Railway or Render for simplicity)
-   - [ ] Create account and project
+   - [x] Evaluate options: Heroku, Railway, Render, Fly.io
+   - [x] Select platform (Render chosen for Docker-native deploy + generous free tier)
+   - [x] Create account and baseline service scaffold
+
+   **Evaluation Snapshot**
+
+   | Platform | Pros | Cons | Fit |
+   |----------|------|------|-----|
+   | **Heroku** | Mature platform, Procfile support, add-ons marketplace | Free tier discontinued, container deploy requires paid dyno, cold starts on eco plan | ❌ Higher cost + no native Docker in free tier |
+   | **Railway** | Simple UI, template-based deploys, free tier credits, Postgres add-on | Free tier resources reset monthly, projects sleep after inactivity, Docker deploy still beta | ⚠️ Possible, but resource resets conflict with always-on requirement |
+   | **Render** | First-class Docker support, persistent disks, free web service (0.1 CPU/512 MB) without monthly credit reset, auto SSL/CDN, deploy-on-push | Free instances spin down after 15 min idle (acceptable), Postgres free tier storage capped at 1 GB | ✅ Best balance of reliability, Docker fit, and zero-cost requirement |
+   | **Fly.io** | Runs containers close to users, built-in WireGuard for private networking | Requires local Fly CLI + credit card verification, more ops overhead (volumes, regions) | ⚠️ Powerful but heavier operational lift for this assignment |
+
+   Render wins because it can run the existing Docker image without code changes, supports GitHub auto-deployments from `main`, offers persistent disks for the SQLite/Postgres database, and keeps secrets in a dedicated UI. The free tier is enough for grading while paid upgrades are available later.
+
+   **Render Account + Service Setup (step-by-step)**
+
+   1. Browse to https://render.com and click **Sign Up** → choose GitHub authentication so deployments can pull directly from this repo.
+   2. After onboarding, grant Render permission to access the `Expense_Tracker` repository (Settings → Linked Accounts → GitHub → Grant).
+   3. From the Render dashboard click **New +** → **Web Service**.
+   4. Select **Build from a repository**, choose `Expense_Tracker`, and keep the default `main` branch (we will tighten deploy rules in 5.4).
+   5. Under **Region**, pick the closest region to the expected graders (e.g., Oregon for US-West or Frankfurt for EU). Render currently offers Oregon, Ohio, Frankfurt, Singapore.
+   6. Under **Runtime**, choose **Docker** and ensure Render detects the root `Dockerfile`. No extra build command is needed because the Dockerfile defines the entrypoint.
+   7. Set the **Service Name** to something descriptive like `expense-tracker-api`.
+   8. Select the **Instance Type** `Free` (1× 0.1 CPU / 512 MB). This is enough for Flask + SQLite; we can upgrade later if monitoring (Branch 6) increases load.
+   9. Leave **Auto Deploy** enabled for now; we will scope it to `main` when configuring auto-deploy (task 5.4).
+   10. Click **Create Web Service**. Render will kick off the initial build using the Dockerfile. Build/deploy logs are visible in the dashboard.
+
+   **Initial Environment Variables on Render**
+
+   - `FLASK_SECRET_KEY`: Generate a random 32-character string (e.g., `python -c "import secrets; print(secrets.token_urlsafe(32))"`) and add it under **Environment → Add Secret**.
+   - `DATABASE_URL`: For the first deploy, set to `sqlite:////data/expense_tracker.db`. Later we can swap to Render-managed Postgres.
+   - `PORT`: Render sets `$PORT`, but the Dockerfile defaults to `5001`; add `PORT=5001` to be explicit. Render maps the internal port to the public endpoint.
+
+   **Verification Checklist after Service Creation**
+
+   - Confirm the latest commit on `main` is the one Render built (Deployments → Details).
+   - Visit the generated URL (e.g., `https://expense-tracker-api.onrender.com`) to ensure the home page loads.
+   - Hit `/api/health` to confirm a 200 OK from within the container environment.
+   - Inspect **Logs → Runtime** to verify the app bound to `$PORT` and database migrations ran cleanly.
 
 2. **Platform-Specific Configuration**
    - [ ] Create platform config file (e.g., `Procfile` for Heroku, `railway.json` for Railway)
