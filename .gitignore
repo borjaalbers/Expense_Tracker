@@ -4,3 +4,4 @@ __pycache__/
 .env
 users.json
 expenses.json
+.DS_Store
