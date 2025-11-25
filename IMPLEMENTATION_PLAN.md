@@ -255,9 +255,29 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 #### Tasks:
 
 1. **Choose Deployment Platform**
-   - [ ] Evaluate options: Heroku, Railway, Render, Fly.io
-   - [ ] Select platform (recommendation: Railway or Render for simplicity)
-   - [ ] Create account and project
+   - [x] Evaluate options: Heroku, Railway, Render, Fly.io
+   - [x] Select platform (Render chosen for Docker-native deploy + generous free tier)
+   - [x] Create account and project
+
+   **Evaluation Snapshot**
+
+   | Platform | Pros | Cons | Fit |
+   |----------|------|------|-----|
+   | **Heroku** | Mature platform, Procfile support, add-ons marketplace | Free tier discontinued, container deploy requires paid dyno, cold starts on eco plan | ❌ Costs + no native Docker on free tier |
+   | **Railway** | Simple UI, template-based deploys, Postgres add-on | Free tier credits reset monthly, projects sleep after inactivity, Docker deploy beta | ⚠️ OK but credits reset mid-review |
+   | **Render** | First-class Docker support, free tier without credit reset, persistent disks, auto SSL, deploy-on-push | Free instances sleep after 15 min idle, Postgres limited to 1 GB on free tier | ✅ Best balance for assignment |
+   | **Fly.io** | Global regions, private networking, CLI driven | Requires CLI + credit card verification, more ops overhead | ⚠️ Overkill for class project |
+
+   Render wins because it deploys the existing Dockerfile with no code changes, supports GitHub auto-deployments from `main`, and keeps secrets + persistent storage in one dashboard.
+
+   **Render Setup Checklist (completed)**
+   1. Sign up with GitHub and authorize access to `borjaalbers/Expense_Tracker`.
+   2. Create a **Web Service** named `expense-tracker` targeting branch `main`, region **Frankfurt**, runtime **Docker**, instance type **Free (0.1 CPU/512 MB)**.
+   3. Seed env vars: `FLASK_SECRET_KEY=<generated>`, `DATABASE_URL=sqlite:////data/expense_tracker.db`, `PORT=5001`.
+   4. Deploy latest commit (5d4dabc) and verify:
+      - Root URL renders (sign up/in works, expenses can be added).
+      - `/api/health` returns `{"status": "ok", ...}`.
+      - Render logs show 200 responses and no runtime errors.
 
 2. **Platform-Specific Configuration**
    - [ ] Create platform config file (e.g., `Procfile` for Heroku, `railway.json` for Railway)
