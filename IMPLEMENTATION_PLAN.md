@@ -291,11 +291,15 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - Auto-deploy enabled for `main`; health check ensures container readiness.
 
 3. **Environment Variables**
-   - [ ] Document all required env vars
-   - [ ] Set up secrets in platform dashboard
-   - [ ] Configure DATABASE_URL (use platform DB or external)
-   - [ ] Set FLASK_SECRET_KEY
-   - [ ] Set PORT (usually auto-set by platform)
+   - [x] Document all required env vars (`ENVIRONMENT.md` + README section)
+   - [x] Set up secrets in platform dashboard (Render env vars + FLASK_DEBUG=0)
+   - [x] Configure DATABASE_URL (SQLite default + notes for Render Postgres)
+   - [x] Set FLASK_SECRET_KEY (documented generation steps)
+   - [x] Set PORT (5001 locally/Render)
+
+   **Highlights**
+   - `.env.example` + new `ENVIRONMENT.md` describe every variable, defaults, and rotation guidance.
+   - README links to the env guide; Render instructions ensure `FLASK_SECRET_KEY`, `DATABASE_URL`, `PORT`, and `FLASK_DEBUG` are set.
 
 4. **Auto-Deployment Setup**
    - [ ] Connect GitHub repository

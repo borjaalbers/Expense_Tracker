@@ -183,6 +183,17 @@ docker volume inspect expense_tracker_expense_data
 docker compose down -v
 ```
 
+## 🔐 Environment Variables
+
+All required environment variables are documented in [`ENVIRONMENT.md`](ENVIRONMENT.md). For a quick start:
+
+```bash
+cp .env.example .env
+python -c "import secrets; print(secrets.token_urlsafe(32))"  # generate FLASK_SECRET_KEY
+```
+
+Make sure the same keys exist on Render (Settings → Environment): `FLASK_SECRET_KEY`, `DATABASE_URL`, `PORT`, and `FLASK_DEBUG=0`.
+
 ## ☁️ Render Deployment (Platform Config)
 
 Use the included `render.yaml` blueprint to replicate the Render service configuration.
