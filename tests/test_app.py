@@ -438,15 +438,68 @@ class TestCategoryRoutes:
 
 
 class TestHealthRoute:
-    """Test health check endpoint."""
+    """Test enhanced health check endpoint."""
 
-    def test_health(self, client):
-        """Test health endpoint."""
+    def test_health_basic(self, client):
+        """Test health endpoint returns comprehensive status."""
         response = client.get('/api/health')
         
         assert response.status_code == 200
         data = json.loads(response.data)
-        assert data['status'] == 'ok'
+        
+        # Check required fields
+        assert 'status' in data
+        assert data['status'] in ['healthy', 'degraded', 'unhealthy']
+        assert 'version' in data
+        assert 'uptime_seconds' in data
+        assert 'uptime' in data
+        assert 'database' in data
+        assert 'timestamp' in data
+        
+        # Check database connectivity info
+        assert 'connected' in data['database']
+        assert isinstance(data['database']['connected'], bool)
+        
+        # When database is connected, status should be healthy
+        if data['database']['connected']:
+            assert data['status'] == 'healthy'
+
+    def test_health_database_connectivity(self, client):
+        """Test that health endpoint checks database connectivity."""
+        response = client.get('/api/health')
+        
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        
+        # Database should be connected in test environment
+        assert data['database']['connected'] is True
+        assert data['status'] == 'healthy'
+
+    def test_health_uptime_format(self, client):
+        """Test that uptime is in human-readable format."""
+        response = client.get('/api/health')
+        
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        
+        # Uptime should be a string in human-readable format
+        assert isinstance(data['uptime'], str)
+        assert len(data['uptime']) > 0
+        
+        # Uptime seconds should be a number
+        assert isinstance(data['uptime_seconds'], (int, float))
+        assert data['uptime_seconds'] >= 0
+
+    def test_health_version(self, client):
+        """Test that version information is included."""
+        response = client.get('/api/health')
+        
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        
+        # Version should be present and a string
+        assert isinstance(data['version'], str)
+        assert len(data['version']) > 0
 
 
 class TestPageRoutes:
