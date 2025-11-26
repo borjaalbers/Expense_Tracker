@@ -366,9 +366,9 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Add screenshots or export dashboard config
 
 6. **Docker Compose for Monitoring** (Optional)
-   - [ ] Add Prometheus service to docker-compose
-   - [ ] Add Grafana service to docker-compose
-   - [ ] Configure networking between services
+   - [x] Add Prometheus service to docker-compose
+   - [x] Add Grafana service to docker-compose
+   - [x] Configure networking between services
 
 #### Files to Create:
 - `metrics.py` (new)
