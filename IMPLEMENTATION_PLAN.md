@@ -357,13 +357,13 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Add alerting rules (optional)
 
 5. **Grafana Configuration**
-   - [ ] Create `grafana/dashboards/expense-tracker.json`
-   - [ ] Set up dashboard with key metrics:
+   - [x] Create `grafana/dashboards/expense-tracker.json`
+   - [x] Set up dashboard with key metrics:
      - Request rate
      - Error rate
      - Response time (p50, p95, p99)
      - Active users
-   - [ ] Add screenshots or export dashboard config
+   - [x] Add screenshots or export dashboard config
 
 6. **Docker Compose for Monitoring** (Optional)
    - [ ] Add Prometheus service to docker-compose
