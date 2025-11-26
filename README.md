@@ -194,41 +194,59 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"  # generate FLASK_S
 
 Make sure the same keys exist on Render (Settings → Environment): `FLASK_SECRET_KEY`, `DATABASE_URL`, `PORT`, and `FLASK_DEBUG=0`.
 
-## ☁️ Render Deployment (Platform Config)
+## ☁️ Azure Deployment (Containerized)
 
-Use the included `render.yaml` blueprint to replicate the Render service configuration.
+We deploy the Docker image to **Azure App Service for Containers** using Azure Container Registry (ACR).
 
-### One-Time Setup
-1. Push all changes to GitHub (done in this repo).
-2. Go to [render.com](https://render.com) → **Dashboard** → **New +** → **Blueprint**.
-3. When prompted, select this repository (`borjaalbers/Expense_Tracker`). Render will detect `render.yaml`.
-4. Provide a unique service name (ex. `expense-tracker`).
-5. In the **Environment Variables** section:
-   - Click **Add Secret** for `FLASK_SECRET_KEY` and paste a generated value (`python -c "import secrets; print(secrets.token_urlsafe(32))"`).
-   - Keep the default `DATABASE_URL=sqlite:////data/expense_tracker.db` for now (we will swap to Render Postgres later in Branch 5.5).
-   - Keep `PORT=5001`.
-6. Click **Apply** to create the service.
+### Prerequisites
+- Azure subscription + [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
+- Logged in: `az login`
+- Resource group name (example uses `expense-tracker-rg`) and region (e.g., `westeurope`)
 
-### Manual Deploys
+### 1. Provision Azure resources
 ```bash
-# Trigger from Render dashboard (Build & Deploy tab)
+RG=expense-tracker-rg
+LOCATION=westeurope
+ACR_NAME=expensetrackeracr
+WEBAPP_NAME=expense-tracker-api
+
+az group create -n $RG -l $LOCATION
+az acr create -n $ACR_NAME -g $RG --sku Basic --admin-enabled true
+az appservice plan create -n expense-tracker-plan -g $RG --is-linux --sku B1
+az webapp create -n $WEBAPP_NAME -g $RG --plan expense-tracker-plan \
+    --deployment-container-image-name $ACR_NAME.azurecr.io/expense-tracker:latest
 ```
 
-### Render Settings Recap (managed by `render.yaml`)
-| Setting | Value |
-|---------|-------|
-| Runtime | Docker (Dockerfile at repo root) |
-| Branch | `main` |
-| Region | `frankfurt` (change as needed) |
-| Instance Type | Free (0.1 CPU / 512 MB) |
-| Health Check | `/api/health` |
-| Auto Deploy | On (Build on every push to `main`) |
+### 2. Build & push the Docker image
+```bash
+az acr login -n $ACR_NAME
+docker build -t $ACR_NAME.azurecr.io/expense-tracker:latest .
+docker push $ACR_NAME.azurecr.io/expense-tracker:latest
 
-### After Deploy
-1. Open the provided Render URL.
-2. Create a new account (database is per-deployment).
-3. Verify `/api/health` returns `200 OK`.
-4. Check **Logs → Runtime** for errors.
+az webapp config container set -n $WEBAPP_NAME -g $RG \
+    --docker-custom-image-name $ACR_NAME.azurecr.io/expense-tracker:latest \
+    --docker-registry-server-url https://$ACR_NAME.azurecr.io
+```
+
+### 3. Configure environment variables & health check
+```bash
+SECRET=$(python -c "import secrets; print(secrets.token_urlsafe(32))")
+az webapp config appsettings set -g $RG -n $WEBAPP_NAME --settings \
+    FLASK_SECRET_KEY=$SECRET \
+    DATABASE_URL="sqlite:////home/site/wwwroot/expense_tracker.db" \
+    PORT=5001 \
+    FLASK_DEBUG=0
+
+az webapp update -g $RG -n $WEBAPP_NAME --set siteConfig.healthCheckPath="/api/health"
+```
+
+### 4. Verify deployment
+```bash
+az webapp browse -n $WEBAPP_NAME -g $RG
+# or manually open https://<WEBAPP_NAME>.azurewebsites.net
+```
+
+Create a new user, add an expense, and hit `/api/health`. Use `az webapp log tail` for live logs if needed. Any redeploy only requires rebuilding/pushing the Docker image and running `az webapp config container set` with the new tag (CI can automate this later).
 
 ##  How to Use
 

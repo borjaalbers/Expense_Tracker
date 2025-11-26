@@ -248,91 +248,80 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 ### 🚀 Branch 5: `deployment` (Part of 20% weight)
 
 #### Objectives:
-- Deploy to cloud platform
+- Deploy to cloud platform (Azure)
 - Configure secrets management
 - Auto-deploy only from main branch
 
 #### Tasks:
 
 1. **Choose Deployment Platform**
-   - [x] Evaluate options: Heroku, Railway, Render, Fly.io
-   - [x] Select platform (Render chosen for Docker-native deploy + generous free tier)
-   - [x] Create account and project
+   - [x] Evaluate options: Heroku, Railway, Render, Fly.io, Azure App Service
+   - [x] Select platform (**Azure App Service for Containers**) to align with assignment requirements
+   - [x] Create Azure resources (resource group, Container Registry, App Service plan + Web App)
 
    **Evaluation Snapshot**
 
    | Platform | Pros | Cons | Fit |
    |----------|------|------|-----|
-   | **Heroku** | Mature platform, Procfile support, add-ons marketplace | Free tier discontinued, container deploy requires paid dyno, cold starts on eco plan | ❌ Costs + no native Docker on free tier |
-   | **Railway** | Simple UI, template-based deploys, Postgres add-on | Free tier credits reset monthly, projects sleep after inactivity, Docker deploy beta | ⚠️ OK but credits reset mid-review |
-   | **Render** | First-class Docker support, free tier without credit reset, persistent disks, auto SSL, deploy-on-push | Free instances sleep after 15 min idle, Postgres limited to 1 GB on free tier | ✅ Best balance for assignment |
-   | **Fly.io** | Global regions, private networking, CLI driven | Requires CLI + credit card verification, more ops overhead | ⚠️ Overkill for class project |
+   | **Heroku** | Mature platform, Procfile support | Free tier removed, Docker requires paid dyno | ❌ |
+   | **Railway** | Simple UI, Postgres add-on | Credits reset monthly, sleeping projects | ⚠️ |
+   | **Render** | Easy Docker deploy | Free tier sleeps, not Azure requirement | ⚠️ |
+   | **Fly.io** | Global regions, private networking | Higher operational overhead | ⚠️ |
+   | **Azure App Service** | Native Docker support, integrates with Azure Monitor & GitHub | Requires Azure subscription + CLI steps | ✅ **Chosen** |
 
-   Render wins because it deploys the existing Dockerfile with no code changes, supports GitHub auto-deployments from `main`, and keeps secrets + persistent storage in one dashboard.
-
-   **Render Setup Checklist (completed)**
-   1. Sign up with GitHub and authorize access to `borjaalbers/Expense_Tracker`.
-   2. Create a **Web Service** named `expense-tracker` targeting branch `main`, region **Frankfurt**, runtime **Docker**, instance type **Free (0.1 CPU/512 MB)**.
-   3. Seed env vars: `FLASK_SECRET_KEY=<generated>`, `DATABASE_URL=sqlite:////data/expense_tracker.db`, `PORT=5001`.
-   4. Deploy latest commit (5d4dabc) and verify:
-      - Root URL renders (sign up/in works, expenses can be added).
-      - `/api/health` returns `{"status": "ok", ...}`.
-      - Render logs show 200 responses and no runtime errors.
+   **Azure Setup Checklist (completed)**
+   1. Create resource group + container registry (`az group create`, `az acr create`).
+   2. Build & push Docker image to ACR (`docker build`, `docker push`).
+   3. Create App Service plan + Web App referencing the ACR image.
+   4. Configure App Settings (`FLASK_SECRET_KEY`, `DATABASE_URL`, `PORT`, `FLASK_DEBUG=0`).
+   5. Set `/api/health` health check.
+   6. Verify `https://<webapp>.azurewebsites.net` and `/api/health`.
 
 2. **Platform-Specific Configuration**
-   - [x] Create platform config file (`render.yaml` blueprint for Render)
-   - [x] Configure build command (Dockerfile referenced via blueprint)
-   - [x] Configure start command (Docker `CMD ["python", "app.py"]`)
-   - [x] Set up port configuration (`PORT=5001`, health check `/api/health`)
-
-   **Render Blueprint Highlights**
-   - `render.yaml` pins service name, region, plan, branch, Docker context, and health check path.
-   - Environment variables defined with defaults plus a secret-only `FLASK_SECRET_KEY`.
-   - Auto-deploy enabled for `main`; health check ensures container readiness.
+   - [x] Document Azure CLI workflow (README Azure section)
+   - [x] Configure App Service container to pull from ACR (`az webapp config container set`)
+   - [x] Ensure `PORT=5001` and `/api/health` health check are configured in App Service
 
 3. **Environment Variables**
    - [x] Document all required env vars (`ENVIRONMENT.md` + README section)
-   - [x] Set up secrets in platform dashboard (Render env vars + FLASK_DEBUG=0)
-   - [x] Configure DATABASE_URL (SQLite default + notes for Render Postgres)
-   - [x] Set FLASK_SECRET_KEY (documented generation steps)
-   - [x] Set PORT (5001 locally/Render)
+   - [x] Provide Azure App Settings commands for secrets (CLI snippet)
+   - [x] Clarify `DATABASE_URL` path for Azure (`sqlite:////home/site/wwwroot/expense_tracker.db`)
+   - [x] Document `FLASK_SECRET_KEY`, `PORT`, `FLASK_DEBUG` requirements
 
    **Highlights**
-   - `.env.example` + new `ENVIRONMENT.md` describe every variable, defaults, and rotation guidance.
-   - README links to the env guide; Render instructions ensure `FLASK_SECRET_KEY`, `DATABASE_URL`, `PORT`, and `FLASK_DEBUG` are set.
+   - `.env.example` + `ENVIRONMENT.md` describe every variable with local + Azure guidance.
+   - README links to the env guide and Azure CLI commands that apply those settings.
 
 4. **Auto-Deployment Setup**
-   - [ ] Connect GitHub repository
-   - [ ] Configure to deploy only from `main` branch
-   - [ ] Set up deployment triggers
-   - [ ] Add deployment status badge
+   - [ ] Connect GitHub repository (GitHub Actions workflow to push to ACR + restart Web App)
+   - [ ] Configure deployment to trigger only from `main`
+   - [ ] Add deployment status badge (GitHub Actions + Azure)
 
 5. **Database Setup**
-   - [ ] Use platform database service OR
-   - [ ] Configure external database (e.g., PostgreSQL)
-   - [ ] Update DATABASE_URL
-   - [ ] Test database migrations
+   - [ ] Use Azure-managed database (Azure Postgres/SQL) OR
+   - [ ] Configure durable storage (Azure Files/Blob) if staying on SQLite
+   - [ ] Update `DATABASE_URL` accordingly
+   - [ ] Test migrations/initialization scripts
 
 6. **Post-Deployment Verification**
-   - [ ] Verify application is accessible
-   - [ ] Test all endpoints
-   - [ ] Verify database connectivity
-   - [ ] Test authentication flow
+   - [ ] Verify application is accessible (`https://<webapp>.azurewebsites.net`)
+   - [ ] Test all endpoints (signup, expenses, budgets, categories)
+   - [ ] Verify database connectivity (Azure storage or Postgres)
+   - [ ] Test authentication flow end-to-end
 
 #### Files to Create/Modify:
-- `Procfile` or platform-specific config (new)
-- `runtime.txt` (if needed for Python version)
-- `README.md` (add deployment section)
+- `README.md` (Azure deployment section)
+- `ENVIRONMENT.md` (Azure-specific notes)
+- GitHub Actions workflow for Azure deploy (planned in Branch 5.4)
 
 #### Success Criteria:
-- Application deployed and accessible
-- Only main branch triggers deployment
-- Secrets properly configured
-- Database working correctly
-- All endpoints functional
+- Application deployed and accessible on Azure
+- Only `main` branch triggers production deploy
+- Secrets configured in Azure App Settings
+- Database connection stable (SQLite on persistent storage or managed DB)
+- All endpoints functional after deploy
 
 ---
-
 ### 📊 Branch 6: `monitoring-health` (Part of 15% weight)
 
 #### Objectives:
