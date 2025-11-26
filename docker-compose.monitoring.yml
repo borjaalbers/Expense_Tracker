@@ -15,8 +15,8 @@ services:
       - PORT=5001
       - FLASK_DEBUG=0
     volumes:
-      # Persist database data
-      - expense_data:/data
+      # Mount local database directory to use existing data and allow SQLite lock files
+      - ./data:/data
       # Optional: Mount source code for development
       # - .:/app
     networks:
