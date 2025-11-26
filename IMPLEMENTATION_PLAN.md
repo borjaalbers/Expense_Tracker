@@ -280,10 +280,15 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
       - Render logs show 200 responses and no runtime errors.
 
 2. **Platform-Specific Configuration**
-   - [ ] Create platform config file (e.g., `Procfile` for Heroku, `railway.json` for Railway)
-   - [ ] Configure build command
-   - [ ] Configure start command
-   - [ ] Set up port configuration
+   - [x] Create platform config file (`render.yaml` blueprint for Render)
+   - [x] Configure build command (Dockerfile referenced via blueprint)
+   - [x] Configure start command (Docker `CMD ["python", "app.py"]`)
+   - [x] Set up port configuration (`PORT=5001`, health check `/api/health`)
+
+   **Render Blueprint Highlights**
+   - `render.yaml` pins service name, region, plan, branch, Docker context, and health check path.
+   - Environment variables defined with defaults plus a secret-only `FLASK_SECRET_KEY`.
+   - Auto-deploy enabled for `main`; health check ensures container readiness.
 
 3. **Environment Variables**
    - [ ] Document all required env vars

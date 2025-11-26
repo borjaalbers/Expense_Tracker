@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: expense-tracker
+    plan: free
+    env: docker
+    region: frankfurt
+    repo: https://github.com/borjaalbers/Expense_Tracker
+    branch: main
+    rootDir: .
+    dockerContext: .
+    dockerfilePath: Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: FLASK_SECRET_KEY
+        sync: false
+        required: true
+        comment: "Set in Render dashboard (e.g., generated via secrets.token_urlsafe)."
+      - key: DATABASE_URL
+        value: sqlite:////data/expense_tracker.db
+      - key: PORT
+        value: "5001"
+    healthCheckPath: /api/health
+

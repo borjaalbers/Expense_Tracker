@@ -183,6 +183,42 @@ docker volume inspect expense_tracker_expense_data
 docker compose down -v
 ```
 
+## ☁️ Render Deployment (Platform Config)
+
+Use the included `render.yaml` blueprint to replicate the Render service configuration.
+
+### One-Time Setup
+1. Push all changes to GitHub (done in this repo).
+2. Go to [render.com](https://render.com) → **Dashboard** → **New +** → **Blueprint**.
+3. When prompted, select this repository (`borjaalbers/Expense_Tracker`). Render will detect `render.yaml`.
+4. Provide a unique service name (ex. `expense-tracker`).
+5. In the **Environment Variables** section:
+   - Click **Add Secret** for `FLASK_SECRET_KEY` and paste a generated value (`python -c "import secrets; print(secrets.token_urlsafe(32))"`).
+   - Keep the default `DATABASE_URL=sqlite:////data/expense_tracker.db` for now (we will swap to Render Postgres later in Branch 5.5).
+   - Keep `PORT=5001`.
+6. Click **Apply** to create the service.
+
+### Manual Deploys
+```bash
+# Trigger from Render dashboard (Build & Deploy tab)
+```
+
+### Render Settings Recap (managed by `render.yaml`)
+| Setting | Value |
+|---------|-------|
+| Runtime | Docker (Dockerfile at repo root) |
+| Branch | `main` |
+| Region | `frankfurt` (change as needed) |
+| Instance Type | Free (0.1 CPU / 512 MB) |
+| Health Check | `/api/health` |
+| Auto Deploy | On (Build on every push to `main`) |
+
+### After Deploy
+1. Open the provided Render URL.
+2. Create a new account (database is per-deployment).
+3. Verify `/api/health` returns `200 OK`.
+4. Check **Logs → Runtime** for errors.
+
 ##  How to Use
 
 1. **Sign Up**: Create a new account on the landing page
