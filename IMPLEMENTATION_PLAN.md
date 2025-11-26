@@ -351,10 +351,10 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Test metrics collection
 
 4. **Prometheus Configuration**
-   - [ ] Create `prometheus.yml` configuration
-   - [ ] Configure scrape interval
-   - [ ] Set up target (application)
-   - [ ] Add alerting rules (optional)
+   - [x] Create `prometheus.yml` configuration
+   - [x] Configure scrape interval
+   - [x] Set up target (application)
+   - [x] Add alerting rules (optional)
 
 5. **Grafana Configuration**
    - [ ] Create `grafana/dashboards/expense-tracker.json`
@@ -373,6 +373,7 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 #### Files to Create:
 - `metrics.py` (new)
 - `prometheus.yml` (new)
+- `prometheus_alerts.yml` (optional, new)
 - `grafana/dashboards/expense-tracker.json` (new)
 - `docker-compose.monitoring.yml` (optional, new)
 - `app.py` (modify to add metrics)
