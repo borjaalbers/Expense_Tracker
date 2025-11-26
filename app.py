@@ -13,12 +13,18 @@ import storage_db as storage
 # Health check module
 import health_check
 
+# Metrics module
+import metrics
+
 app = Flask(__name__, template_folder="templates", static_folder="static")
 # Secret key for sessions - in production use env var
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-key-change-me")
 
 # Initialize health check tracking
 health_check.initialize_health_check()
+
+# Initialize metrics collection middleware
+metrics.track_request_metrics(app)
 
 # --------------------------
 # Helper utilities
@@ -335,6 +341,18 @@ def health():
     """
     health_data, http_status = health_check.get_health_status()
     return jsonify(health_data), http_status
+
+# --------------------------
+# Metrics
+# --------------------------
+@app.route("/metrics", methods=["GET"])
+def metrics_endpoint():
+    """
+    Prometheus metrics endpoint.
+    
+    Exposes application metrics in Prometheus format for scraping.
+    """
+    return metrics.get_metrics_response()
 
 # --------------------------
 # Run

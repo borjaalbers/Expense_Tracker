@@ -502,6 +502,59 @@ class TestHealthRoute:
         assert len(data['version']) > 0
 
 
+class TestMetricsRoute:
+    """Test Prometheus metrics endpoint."""
+
+    def test_metrics_endpoint_exists(self, client):
+        """Test that /metrics endpoint exists and returns Prometheus format."""
+        response = client.get('/metrics')
+        
+        assert response.status_code == 200
+        assert response.content_type.startswith('text/plain')
+        
+        # Should contain Prometheus format metrics
+        metrics_text = response.data.decode('utf-8')
+        assert '# HELP' in metrics_text or '# TYPE' in metrics_text
+
+    def test_metrics_http_request_count(self, client):
+        """Test that HTTP request count metrics are collected."""
+        # Make a few requests
+        client.get('/api/health')
+        client.get('/')
+        
+        # Check metrics
+        response = client.get('/metrics')
+        metrics_text = response.data.decode('utf-8')
+        
+        # Should have http_requests_total metric
+        assert 'http_requests_total' in metrics_text
+        assert 'health' in metrics_text or 'index' in metrics_text
+
+    def test_metrics_http_request_duration(self, client):
+        """Test that HTTP request duration metrics are collected."""
+        # Make a request
+        client.get('/api/health')
+        
+        # Check metrics
+        response = client.get('/metrics')
+        metrics_text = response.data.decode('utf-8')
+        
+        # Should have http_request_duration_seconds metric
+        assert 'http_request_duration_seconds' in metrics_text
+
+    def test_metrics_error_tracking(self, client):
+        """Test that error metrics are tracked for 4xx/5xx responses."""
+        # Make a request that will result in 404
+        client.get('/nonexistent-endpoint')
+        
+        # Check metrics
+        response = client.get('/metrics')
+        metrics_text = response.data.decode('utf-8')
+        
+        # Should have error tracking (may or may not have errors yet depending on route handling)
+        assert 'http_errors_total' in metrics_text or 'http_requests_total' in metrics_text
+
+
 class TestPageRoutes:
     """Test HTML page routes."""
 

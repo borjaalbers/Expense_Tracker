@@ -338,17 +338,17 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Add uptime information
 
 2. **Add Metrics Collection**
-   - [ ] Install `prometheus-client` library
-   - [ ] Create metrics module
-   - [ ] Add request count metric
-   - [ ] Add request latency metric
-   - [ ] Add error count metric
-   - [ ] Add active users metric (optional)
+   - [x] Install `prometheus-client` library
+   - [x] Create metrics module
+   - [x] Add request count metric
+   - [x] Add request latency metric
+   - [x] Add error count metric
+   - [x] Add active users metric (optional)
 
 3. **Expose Metrics Endpoint**
-   - [ ] Create `/metrics` endpoint for Prometheus
-   - [ ] Format metrics in Prometheus format
-   - [ ] Test metrics collection
+   - [x] Create `/metrics` endpoint for Prometheus
+   - [x] Format metrics in Prometheus format
+   - [x] Test metrics collection
 
 4. **Prometheus Configuration**
    - [ ] Create `prometheus.yml` configuration
