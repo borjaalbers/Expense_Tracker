@@ -32,6 +32,17 @@ This project relies on a handful of environment variables so that secrets and de
 3. Click **Save and deploy** so Render restarts with the updated configuration.
 4. After deployment, hit `https://<service>.onrender.com/api/health` and review **Logs → Runtime** to confirm the server booted without warnings.
 
+### Persistent Disk (Branch 5.5)
+
+SQLite resets on every deployment unless you add a disk:
+
+1. Render → **Settings → Disks → New Disk**.
+2. Size ≥1 GB, mount path `/data`, attach to the web service.
+3. Keep `DATABASE_URL=sqlite:////data/expense_tracker.db` (already documented). The app now auto-detects `/data` and writes there if `DATABASE_URL` is missing.
+4. Recreate one user after the first restart; all future deploys keep the same database file on the disk.
+
+If you later switch to Render PostgreSQL, swap `DATABASE_URL` to the Postgres URI and remove the disk (or keep it for backups).
+
 ## Rotating Secrets
 
 - Regenerate `FLASK_SECRET_KEY` whenever credentials may have leaked. Update the value both in your `.env` file and on Render.

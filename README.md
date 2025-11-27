@@ -234,7 +234,15 @@ Click **Save Changes** and then **Manual Deploy → Deploy latest commit** so th
 - **Manual redeploy**: use the **Manual Deploy** dropdown → *Deploy latest commit*.
 - **Rollback**: go to **Events**, pick a previous successful deploy, and click **Rollback**.
 
-> ℹ️ We prototyped Azure App Service during Branch 5, but the team decided to keep Render as the primary host to align with the already stable deployment. Azure notes remain in commit history for future work.
+### 5. Persist the database (Branch 5.5)
+Without a persistent disk, every Render deploy wipes the in-container SQLite file and previously created accounts disappear. To keep data between deploys:
+
+1. Render dashboard → your service → **Settings → Disks → New Disk**.
+2. Name it (e.g., `expense-data`), size ≥1 GB, mount path `/data`, select **Delete mount directory contents** = No, then create.
+3. Render restarts automatically. Ensure `DATABASE_URL` remains `sqlite:////data/expense_tracker.db` (already documented above).
+4. After the restart, sign up once and your data will survive future deploys/CD runs.
+
+> ℹ️ We prototyped Azure App Service during Branch 5, but the team decided to keep Render as the primary host to align with the already stable deployment. Azure notes remain in commit history for future work. If you later migrate to Render PostgreSQL, replace `DATABASE_URL` with the Postgres URI and run your migration script.
 
 ##  How to Use
 

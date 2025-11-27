@@ -293,10 +293,11 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Store Render Deploy Hook URL as GitHub secret `RENDER_DEPLOY_HOOK`
    - [ ] (Optional) Add deploy badge / mention in README once secret wired
 
-5. **Database Setup**
-   - [ ] Decide whether to stay on SQLite (Docker volume) or move to Render PostgreSQL for durability
-   - [ ] Update `DATABASE_URL` accordingly if/when migrating
-   - [ ] Test migrations/initialization scripts (if Postgres)
+5. **Database Setup (current focus)**
+   - [ ] Attach a Render Persistent Disk (`/data`, ≥1 GB) and map it to the service
+   - [ ] Confirm `DATABASE_URL=sqlite:////data/expense_tracker.db` and redeploy so data survives deploys
+   - [ ] Update README + `ENVIRONMENT.md` with disk setup steps + caveats
+   - [ ] (Stretch) Evaluate migration path to Render PostgreSQL (connection string, migration script, config toggle)
 
 6. **Post-Deployment Verification**
    - [x] Verify application is accessible (`https://expense-tracker-8y4s.onrender.com`)
@@ -313,7 +314,7 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 - Application deployed and accessible on Render
 - Only `main` branch triggers production deploy (via Render auto deploy)
 - Secrets configured in Render Environment settings
-- Database connection stable (SQLite volume or managed DB)
+- Database connection stable (SQLite persistent disk or managed DB)
 - All endpoints functional after deploy
 
 ---

@@ -11,10 +11,26 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 
+def _build_sqlite_url(path: str) -> str:
+    """Return a properly formatted SQLite connection string for an absolute path."""
+    absolute = os.path.abspath(path)
+    return f"sqlite:///{absolute}"
+
+
 def _get_database_url() -> str:
-    # Default to SQLite file in project directory
-    default_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "expense_tracker.db"))
-    return os.environ.get("DATABASE_URL", f"sqlite:///{default_path}")
+    env_url = os.environ.get("DATABASE_URL")
+    if env_url:
+        return env_url
+
+    # Prefer a writable persistent volume if one is mounted (e.g., Render disk at /data)
+    persistent_dir = os.environ.get("PERSISTENT_DATA_DIR", "/data")
+    persistent_path = os.path.join(persistent_dir, "expense_tracker.db")
+    if os.path.isdir(persistent_dir) and os.access(persistent_dir, os.W_OK):
+        return _build_sqlite_url(persistent_path)
+
+    # Fall back to the repository database file
+    default_path = os.path.join(os.path.dirname(__file__), "expense_tracker.db")
+    return _build_sqlite_url(default_path)
 
 
 ENGINE = create_engine(
