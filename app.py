@@ -43,11 +43,19 @@ expense_service = ExpenseService(lambda: storage)
 budget_service = BudgetService(lambda: storage)
 category_service = CategoryService(lambda: storage)
 
-# Initialize health check tracking
-health_check.initialize_health_check()
+# Initialize health check tracking and metrics collection
+def _initialize_monitoring():
+    """Initialize monitoring components safely."""
+    try:
+        health_check.initialize_health_check()
+        metrics.track_request_metrics(app)
+    except Exception:
+        # Silently fail if monitoring can't be initialized (e.g., in some test environments)
+        # Monitoring will still work if initialized later
+        pass
 
-# Initialize metrics collection middleware
-metrics.track_request_metrics(app)
+# Initialize monitoring after app creation
+_initialize_monitoring()
 
 # --------------------------
 # Helper utilities

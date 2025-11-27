@@ -76,18 +76,20 @@ def check_database_connectivity() -> Dict[str, Any]:
         return {"connected": False, "error": f"Unexpected error: {str(e)}"}
 
 
-def get_health_status() -> Dict[str, Any]:
+def get_health_status() -> tuple[Dict[str, Any], int]:
     """
     Get comprehensive health status of the application.
     
     Returns:
-        Dict with status information including:
-        - status: 'healthy', 'degraded', or 'unhealthy'
-        - version: Application version
-        - uptime_seconds: Uptime in seconds
-        - uptime: Human-readable uptime
-        - database: Database connectivity status
-        - timestamp: Current timestamp
+        Tuple of (dict, int) containing:
+        - dict: Status information including:
+            - status: 'healthy', 'degraded', or 'unhealthy'
+            - version: Application version
+            - uptime_seconds: Uptime in seconds
+            - uptime: Human-readable uptime
+            - database: Database connectivity status
+            - timestamp: Current timestamp
+        - int: HTTP status code (200 for healthy, 503 for unhealthy)
     """
     db_check = check_database_connectivity()
     
