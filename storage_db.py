@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, TypeVar
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
-from db import get_session
+from db import get_session, ENGINE
 from models import User, Expense, Budget, Category
 from config import Config
 
@@ -85,6 +85,14 @@ class UserRepository(BaseRepository):
 
 class ExpenseRepository(BaseRepository):
     model = Expense
+
+    @staticmethod
+    def _month_bucket(column):
+        """Return a SQL expression that renders YYYY-MM across SQLite/Postgres."""
+        if ENGINE.dialect.name == "sqlite":
+            return func.strftime("%Y-%m", column)
+        # Postgres & others: format via to_char
+        return func.to_char(column, "YYYY-MM")
 
     @staticmethod
     def _to_dict(exp: Expense) -> Dict[str, Any]:
@@ -185,10 +193,11 @@ class ExpenseRepository(BaseRepository):
     @classmethod
     def monthly_totals(cls, user_id: int) -> Dict[str, float]:
         def _run(session: Session):
+            month_expr = cls._month_bucket(cls.model.date)
             rows = session.execute(
-                select(func.strftime("%Y-%m", cls.model.date), func.sum(cls.model.amount))
+                select(month_expr, func.sum(cls.model.amount))
                 .where(cls.model.user_id == user_id)
-                .group_by(func.strftime("%Y-%m", cls.model.date))
+                .group_by(month_expr)
             ).all()
             return {ym or "": float(total or 0.0) for ym, total in rows}
 
