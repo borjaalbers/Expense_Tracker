@@ -272,7 +272,7 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    **Render Setup Checklist (current)**
    1. Confirm Docker Web Service exists (`Expense_Tracker`).
    2. Ensure repo is connected and auto-deploy from `main` is enabled.
-   3. Verify Render environment variables (`FLASK_SECRET_KEY`, `DATABASE_URL=sqlite:////data/expense_tracker.db`, `PORT=5001`, `FLASK_DEBUG=0`).
+   3. Verify Render environment variables (`FLASK_SECRET_KEY`, `DATABASE_URL` pointing to Render Postgres, `PORT=5001`, `FLASK_DEBUG=0`, `PGSSLMODE=require`).
    4. Confirm health check via `/api/health`.
    5. Validate live URL `https://expense-tracker-8y4s.onrender.com`.
 
@@ -283,8 +283,8 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 
 3. **Environment Variables**
    - [x] Document required env vars (`README.md`, `ENVIRONMENT.md`, `.env.example`)
-   - [x] Set up secrets in Render Environment (FLASK_SECRET_KEY, DATABASE_URL, PORT, FLASK_DEBUG)
-   - [x] Clarify DATABASE_URL for Render persistent disk (`sqlite:////data/expense_tracker.db`)
+   - [x] Set up secrets in Render Environment (FLASK_SECRET_KEY, DATABASE_URL, PORT, FLASK_DEBUG, PGSSLMODE)
+   - [x] Clarify DATABASE_URL expectations for both Docker volume (local) and Render Postgres (production)
    - [x] Provide instructions for secret rotation
 
 4. **Auto-Deployment Setup**
@@ -293,17 +293,23 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Store Render Deploy Hook URL as GitHub secret `RENDER_DEPLOY_HOOK`
    - [ ] (Optional) Add deploy badge / mention in README once secret wired
 
-5. **Database Setup (current focus)**
-   - [ ] Attach a Render Persistent Disk (`/data`, ≥1 GB) and map it to the service
-   - [ ] Confirm `DATABASE_URL=sqlite:////data/expense_tracker.db` and redeploy so data survives deploys
-   - [ ] Update README + `ENVIRONMENT.md` with disk setup steps + caveats
-   - [ ] (Stretch) Evaluate migration path to Render PostgreSQL (connection string, migration script, config toggle)
+5. **Database Setup (completed)**
+   - [x] Provision Render PostgreSQL (free tier) in Frankfurt
+   - [x] Add `psycopg2-binary` dependency so Render containers can talk to Postgres
+   - [x] Run `db_init.py` against Postgres and verify tables/seed data
+   - [x] Fix SQLite-only queries (`strftime`) to use portable month buckets (to_char) for budgets/charts
+   - [x] Update README + `ENVIRONMENT.md` to describe the Postgres workflow and required env vars
+   - [ ] (Optional) Document Postgres backup/maintenance steps for production hand-off
 
-6. **Post-Deployment Verification**
-   - [x] Verify application is accessible (`https://expense-tracker-8y4s.onrender.com`)
-   - [x] Test all endpoints (signup, expenses, budgets, categories) after redeploy
-   - [x] Verify database connectivity using Render persistent disk
-   - [x] Test authentication flow end-to-end in production instance
+6. **Post-Deployment Verification (in progress)**
+   - [ ] Record manual verification of each critical workflow on Render:
+       - [ ] Sign up / sign in / sign out
+       - [ ] Create, edit, delete expenses and confirm charts update
+       - [ ] Set monthly budget and observe budget status
+       - [ ] Manage categories (add/delete) and verify dropdown sync
+   - [ ] Hit `/api/health` and `/metrics` to confirm status/metrics endpoints respond with 200s
+   - [ ] Confirm data persistence across redeploy by running `cd-render` and re-checking user data
+   - [ ] Summarize verification results + screenshots/notes in README or REPORT.md section
 
 #### Files to Create/Modify:
 - `README.md` (Render deployment section)
