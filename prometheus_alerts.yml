@@ -1,0 +1,69 @@
+# Prometheus alerting rules for Expense Tracker
+# This file can be referenced in prometheus.yml by uncommenting the rule_files section
+#
+# To enable these alerts:
+# 1. Uncomment the rule_files section in prometheus.yml
+# 2. Rename this file to alert_rules.yml or update the path in prometheus.yml
+
+groups:
+  - name: expense_tracker_alerts
+    interval: 30s
+    rules:
+      # Alert if the application is down
+      - alert: ApplicationDown
+        expr: up{job="expense-tracker"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Expense Tracker application is down"
+          description: "The Expense Tracker application has been down for more than 1 minute."
+
+      # Alert if high error rate
+      - alert: HighErrorRate
+        expr: |
+          rate(http_errors_total{job="expense-tracker"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors/second for the last 5 minutes."
+
+      # Alert if request latency is high (p95 > 1 second)
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            rate(http_request_duration_seconds_bucket{job="expense-tracker"}[5m])
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency detected"
+          description: "95th percentile latency is {{ $value }}s for the last 5 minutes."
+
+      # Alert if no requests received in 10 minutes
+      - alert: NoRequests
+        expr: |
+          rate(http_requests_total{job="expense-tracker"}[10m]) == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No requests received"
+          description: "No HTTP requests have been received in the last 10 minutes."
+
+      # Alert if database health check fails
+      - alert: DatabaseUnhealthy
+        expr: |
+          up{job="expense-tracker"} == 1 AND 
+          rate(http_requests_total{job="expense-tracker",endpoint="health"}[5m]) > 0 AND
+          rate(http_requests_total{job="expense-tracker",endpoint="health",status="5xx"}[5m]) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connectivity issues detected"
+          description: "Health check endpoint is returning 5xx errors, indicating database connectivity problems."
+

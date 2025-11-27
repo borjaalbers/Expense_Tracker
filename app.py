@@ -1,7 +1,7 @@
 # app.py
 from typing import Any, Dict, Optional
 
-from flask import Flask, Response, render_template, request, session, redirect, url_for
+from flask import Flask, Response, jsonify, render_template, request, session, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from config import Config
@@ -27,6 +27,12 @@ from utils.validation import (
 
 Base.metadata.create_all(bind=ENGINE)
 
+# Health check module
+import health_check
+
+# Metrics module
+import metrics
+
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config.from_object(Config)
 # Secret key for sessions - in production use env var
@@ -36,6 +42,12 @@ auth_service = AuthService(lambda: storage)
 expense_service = ExpenseService(lambda: storage)
 budget_service = BudgetService(lambda: storage)
 category_service = CategoryService(lambda: storage)
+
+# Initialize health check tracking
+health_check.initialize_health_check()
+
+# Initialize metrics collection middleware
+metrics.track_request_metrics(app)
 
 # --------------------------
 # Helper utilities
@@ -327,9 +339,30 @@ def api_delete_category(category_id: int) -> tuple[Response, int]:
 # Health
 # --------------------------
 @app.route("/api/health", methods=["GET"])
-def health() -> tuple[Response, int]:
-    """Return a simple health payload for monitoring."""
-    return json_response({"status": "ok", "user": session.get("username")}, status=200)
+def health():
+    """
+    Enhanced health check endpoint.
+    
+    Returns comprehensive health status including:
+    - Application status (healthy, degraded, unhealthy)
+    - Database connectivity
+    - Application version
+    - Uptime information
+    """
+    health_data, http_status = health_check.get_health_status()
+    return jsonify(health_data), http_status
+
+# --------------------------
+# Metrics
+# --------------------------
+@app.route("/metrics", methods=["GET"])
+def metrics_endpoint():
+    """
+    Prometheus metrics endpoint.
+    
+    Exposes application metrics in Prometheus format for scraping.
+    """
+    return metrics.get_metrics_response()
 
 # --------------------------
 # Run

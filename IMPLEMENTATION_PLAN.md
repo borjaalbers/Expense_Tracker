@@ -332,47 +332,48 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 #### Tasks:
 
 1. **Enhance Health Endpoint**
-   - [ ] Add database connectivity check
-   - [ ] Add application version info
-   - [ ] Return detailed status (healthy, degraded, unhealthy)
-   - [ ] Add uptime information
+   - [x] Add database connectivity check
+   - [x] Add application version info
+   - [x] Return detailed status (healthy, degraded, unhealthy)
+   - [x] Add uptime information
 
 2. **Add Metrics Collection**
-   - [ ] Install `prometheus-client` library
-   - [ ] Create metrics module
-   - [ ] Add request count metric
-   - [ ] Add request latency metric
-   - [ ] Add error count metric
-   - [ ] Add active users metric (optional)
+   - [x] Install `prometheus-client` library
+   - [x] Create metrics module
+   - [x] Add request count metric
+   - [x] Add request latency metric
+   - [x] Add error count metric
+   - [x] Add active users metric (optional)
 
 3. **Expose Metrics Endpoint**
-   - [ ] Create `/metrics` endpoint for Prometheus
-   - [ ] Format metrics in Prometheus format
-   - [ ] Test metrics collection
+   - [x] Create `/metrics` endpoint for Prometheus
+   - [x] Format metrics in Prometheus format
+   - [x] Test metrics collection
 
 4. **Prometheus Configuration**
-   - [ ] Create `prometheus.yml` configuration
-   - [ ] Configure scrape interval
-   - [ ] Set up target (application)
-   - [ ] Add alerting rules (optional)
+   - [x] Create `prometheus.yml` configuration
+   - [x] Configure scrape interval
+   - [x] Set up target (application)
+   - [x] Add alerting rules (optional)
 
 5. **Grafana Configuration**
-   - [ ] Create `grafana/dashboards/expense-tracker.json`
-   - [ ] Set up dashboard with key metrics:
+   - [x] Create `grafana/dashboards/expense-tracker.json`
+   - [x] Set up dashboard with key metrics:
      - Request rate
      - Error rate
      - Response time (p50, p95, p99)
      - Active users
-   - [ ] Add screenshots or export dashboard config
+   - [x] Add screenshots or export dashboard config
 
 6. **Docker Compose for Monitoring** (Optional)
-   - [ ] Add Prometheus service to docker-compose
-   - [ ] Add Grafana service to docker-compose
-   - [ ] Configure networking between services
+   - [x] Add Prometheus service to docker-compose
+   - [x] Add Grafana service to docker-compose
+   - [x] Configure networking between services
 
 #### Files to Create:
 - `metrics.py` (new)
 - `prometheus.yml` (new)
+- `prometheus_alerts.yml` (optional, new)
 - `grafana/dashboards/expense-tracker.json` (new)
 - `docker-compose.monitoring.yml` (optional, new)
 - `app.py` (modify to add metrics)

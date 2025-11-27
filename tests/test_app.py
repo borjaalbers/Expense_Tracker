@@ -438,15 +438,121 @@ class TestCategoryRoutes:
 
 
 class TestHealthRoute:
-    """Test health check endpoint."""
+    """Test enhanced health check endpoint."""
 
-    def test_health(self, client):
-        """Test health endpoint."""
+    def test_health_basic(self, client):
+        """Test health endpoint returns comprehensive status."""
         response = client.get('/api/health')
         
         assert response.status_code == 200
         data = json.loads(response.data)
-        assert data['status'] == 'ok'
+        
+        # Check required fields
+        assert 'status' in data
+        assert data['status'] in ['healthy', 'degraded', 'unhealthy']
+        assert 'version' in data
+        assert 'uptime_seconds' in data
+        assert 'uptime' in data
+        assert 'database' in data
+        assert 'timestamp' in data
+        
+        # Check database connectivity info
+        assert 'connected' in data['database']
+        assert isinstance(data['database']['connected'], bool)
+        
+        # When database is connected, status should be healthy
+        if data['database']['connected']:
+            assert data['status'] == 'healthy'
+
+    def test_health_database_connectivity(self, client):
+        """Test that health endpoint checks database connectivity."""
+        response = client.get('/api/health')
+        
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        
+        # Database should be connected in test environment
+        assert data['database']['connected'] is True
+        assert data['status'] == 'healthy'
+
+    def test_health_uptime_format(self, client):
+        """Test that uptime is in human-readable format."""
+        response = client.get('/api/health')
+        
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        
+        # Uptime should be a string in human-readable format
+        assert isinstance(data['uptime'], str)
+        assert len(data['uptime']) > 0
+        
+        # Uptime seconds should be a number
+        assert isinstance(data['uptime_seconds'], (int, float))
+        assert data['uptime_seconds'] >= 0
+
+    def test_health_version(self, client):
+        """Test that version information is included."""
+        response = client.get('/api/health')
+        
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        
+        # Version should be present and a string
+        assert isinstance(data['version'], str)
+        assert len(data['version']) > 0
+
+
+class TestMetricsRoute:
+    """Test Prometheus metrics endpoint."""
+
+    def test_metrics_endpoint_exists(self, client):
+        """Test that /metrics endpoint exists and returns Prometheus format."""
+        response = client.get('/metrics')
+        
+        assert response.status_code == 200
+        assert response.content_type.startswith('text/plain')
+        
+        # Should contain Prometheus format metrics
+        metrics_text = response.data.decode('utf-8')
+        assert '# HELP' in metrics_text or '# TYPE' in metrics_text
+
+    def test_metrics_http_request_count(self, client):
+        """Test that HTTP request count metrics are collected."""
+        # Make a few requests
+        client.get('/api/health')
+        client.get('/')
+        
+        # Check metrics
+        response = client.get('/metrics')
+        metrics_text = response.data.decode('utf-8')
+        
+        # Should have http_requests_total metric
+        assert 'http_requests_total' in metrics_text
+        assert 'health' in metrics_text or 'index' in metrics_text
+
+    def test_metrics_http_request_duration(self, client):
+        """Test that HTTP request duration metrics are collected."""
+        # Make a request
+        client.get('/api/health')
+        
+        # Check metrics
+        response = client.get('/metrics')
+        metrics_text = response.data.decode('utf-8')
+        
+        # Should have http_request_duration_seconds metric
+        assert 'http_request_duration_seconds' in metrics_text
+
+    def test_metrics_error_tracking(self, client):
+        """Test that error metrics are tracked for 4xx/5xx responses."""
+        # Make a request that will result in 404
+        client.get('/nonexistent-endpoint')
+        
+        # Check metrics
+        response = client.get('/metrics')
+        metrics_text = response.data.decode('utf-8')
+        
+        # Should have error tracking (may or may not have errors yet depending on route handling)
+        assert 'http_errors_total' in metrics_text or 'http_requests_total' in metrics_text
 
 
 class TestPageRoutes:

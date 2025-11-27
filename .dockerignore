@@ -1,22 +1,52 @@
+# Virtual environment
 venv/
+env/
+ENV/
+
+# Python cache
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
+*$py.class
+*.so
 .Python
+
+# Test files and coverage
 .pytest_cache/
 htmlcov/
 .coverage*
+*.cover
 
-# Local databases and temp data
-expense_tracker.db
-*.sqlite3
+# Database files
 *.db
+*.sqlite
+*.sqlite3
 /data/
 
 # Development artifacts
 .DS_Store
+Thumbs.db
 *.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Environment files
+.env
+.env.local
+
+# Documentation
+*.md
+!README.md
 
 # Tests (not needed inside runtime image)
 tests/
