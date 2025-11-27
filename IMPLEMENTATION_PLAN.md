@@ -277,25 +277,21 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    5. Validate live URL `https://expense-tracker-8y4s.onrender.com`.
 
 2. **Platform-Specific Configuration**
-   - [x] Refresh README with Render deployment workflow (dashboard + CLI steps)
-   - [x] Document Render health check expectations (PORT binding to `$PORT`)
-   - [x] Capture troubleshooting tips (spin-down latency, log streaming, redeploy button)
+   - [x] Configure Render Docker service (Dockerfile build, `CMD ["python","app.py"]`)
+   - [x] Map internal port `5001` to Render’s `$PORT`
+   - [x] Document Render dashboard workflow in README (create service, logs, redeploy, rollback)
 
 3. **Environment Variables**
-   - [x] Document required env vars (`ENVIRONMENT.md` + README)
-   - [x] Provide Render UI steps for configuring secrets
-   - [x] Clarify `DATABASE_URL` path for Render (`sqlite:////data/expense_tracker.db`)
-   - [x] Emphasize `FLASK_SECRET_KEY`, `PORT`, `FLASK_DEBUG=0`
-
-   **Highlights**
-   - `.env.example` + `ENVIRONMENT.md` describe every variable with local + Render guidance.
-   - README links to the env guide and Render dashboard instructions.
-   - Azure attempt is logged for transparency, but Render remains the supported path.
+   - [x] Document required env vars (`README.md`, `ENVIRONMENT.md`, `.env.example`)
+   - [x] Set up secrets in Render Environment (FLASK_SECRET_KEY, DATABASE_URL, PORT, FLASK_DEBUG)
+   - [x] Clarify DATABASE_URL for Render persistent disk (`sqlite:////data/expense_tracker.db`)
+   - [x] Provide instructions for secret rotation
 
 4. **Auto-Deployment Setup**
-   - [ ] Keep Render auto-deploy toggled on for `main`
-   - [ ] Gate deployments via GitHub Actions badge/status
-   - [ ] Document rollback flow using Render dashboard
+   - [x] Add GitHub Actions workflow `.github/workflows/cd-render.yml`
+   - [x] Describe Render Deploy Hook usage + rollback steps in README
+   - [x] Store Render Deploy Hook URL as GitHub secret `RENDER_DEPLOY_HOOK`
+   - [ ] (Optional) Add deploy badge / mention in README once secret wired
 
 5. **Database Setup**
    - [ ] Decide whether to stay on SQLite (Docker volume) or move to Render PostgreSQL for durability

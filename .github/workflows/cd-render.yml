@@ -1,0 +1,32 @@
+name: cd-render
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Trigger Render Deploy
+    runs-on: ubuntu-latest
+    env:
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+    steps:
+      - name: Ensure hook secret exists
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "RENDER_DEPLOY_HOOK secret is missing" >&2
+            exit 1
+          fi
+      - name: Invoke Render Deploy Hook
+        run: |
+          response=$(curl -sSL -X POST "$RENDER_DEPLOY_HOOK" -w "\n%{http_code}")
+          body=$(printf "%s" "$response" | head -n -1)
+          status=$(printf "%s" "$response" | tail -n1)
+          echo "$body"
+          if [ "$status" -ge 400 ]; then
+            echo "Render deploy hook returned HTTP $status" >&2
+            exit 1
+          fi
+
