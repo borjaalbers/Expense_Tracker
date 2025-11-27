@@ -194,59 +194,47 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"  # generate FLASK_S
 
 Make sure the same keys exist on Render (Settings → Environment): `FLASK_SECRET_KEY`, `DATABASE_URL`, `PORT`, and `FLASK_DEBUG=0`.
 
-## ☁️ Azure Deployment (Containerized)
+## ☁️ Render Deployment (Docker Web Service)
 
-We deploy the Docker image to **Azure App Service for Containers** using Azure Container Registry (ACR).
+The production instance runs on [Render](https://render.com) using the Dockerfile in this repo. Render builds the image automatically whenever `main` changes.
 
 ### Prerequisites
-- Azure subscription + [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
-- Logged in: `az login`
-- Resource group name (example uses `expense-tracker-rg`) and region (e.g., `westeurope`)
+- Render account (free tier is fine; expect cold-start delay after inactivity)
+- GitHub repository connected to Render
+- Dockerfile present in repo (already provided)
 
-### 1. Provision Azure resources
-```bash
-RG=expense-tracker-rg
-LOCATION=westeurope
-ACR_NAME=expensetrackeracr
-WEBAPP_NAME=expense-tracker-api
+### 1. Create or reuse the Web Service
+1. Log into Render → **Dashboard → New → Web Service**.
+2. Connect the `borjaalbers/Expense_Tracker` repository and select the `main` branch.
+3. Choose **Docker** as the runtime (Render auto-detects the `Dockerfile`).
+4. Set region closest to your users (current service lives in EU).
+5. Keep the free instance plan unless you need faster cold starts.
 
-az group create -n $RG -l $LOCATION
-az acr create -n $ACR_NAME -g $RG --sku Basic --admin-enabled true
-az appservice plan create -n expense-tracker-plan -g $RG --is-linux --sku B1
-az webapp create -n $WEBAPP_NAME -g $RG --plan expense-tracker-plan \
-    --deployment-container-image-name $ACR_NAME.azurecr.io/expense-tracker:latest
-```
+Render uses the Dockerfile build instructions, so you can leave the build & start commands blank (Render runs `docker build` + `CMD ["python","app.py"]` from the image).
 
-### 2. Build & push the Docker image
-```bash
-az acr login -n $ACR_NAME
-docker build -t $ACR_NAME.azurecr.io/expense-tracker:latest .
-docker push $ACR_NAME.azurecr.io/expense-tracker:latest
+### 2. Configure environment variables
+Navigate to **Settings → Environment** for the service and ensure:
 
-az webapp config container set -n $WEBAPP_NAME -g $RG \
-    --docker-custom-image-name $ACR_NAME.azurecr.io/expense-tracker:latest \
-    --docker-registry-server-url https://$ACR_NAME.azurecr.io
-```
+| Key | Value |
+|-----|-------|
+| `FLASK_SECRET_KEY` | Paste a generated secret (`python3 -c "import secrets; print(secrets.token_urlsafe(32))"`) |
+| `DATABASE_URL` | `sqlite:////data/expense_tracker.db` (Docker volume managed by Render) |
+| `PORT` | `5001` |
+| `FLASK_DEBUG` | `0` |
 
-### 3. Configure environment variables & health check
-```bash
-SECRET=$(python -c "import secrets; print(secrets.token_urlsafe(32))")
-az webapp config appsettings set -g $RG -n $WEBAPP_NAME --settings \
-    FLASK_SECRET_KEY=$SECRET \
-    DATABASE_URL="sqlite:////home/site/wwwroot/expense_tracker.db" \
-    PORT=5001 \
-    FLASK_DEBUG=0
+Click **Save Changes** and then **Manual Deploy → Deploy latest commit** so the container restarts with the new settings.
 
-az webapp update -g $RG -n $WEBAPP_NAME --set siteConfig.healthCheckPath="/api/health"
-```
+### 3. Verify deployment
+1. Open the public URL (e.g. `https://expense-tracker-8y4s.onrender.com`).
+2. Hit `/api/health` to confirm a 200 response.
+3. Sign up/in, add expenses, and check logs via **Logs → Live tail** if anything looks off.
 
-### 4. Verify deployment
-```bash
-az webapp browse -n $WEBAPP_NAME -g $RG
-# or manually open https://<WEBAPP_NAME>.azurewebsites.net
-```
+### 4. Redeploy / roll back
+- **Auto-deploy from main**: keep this enabled so every successful CI run ships automatically.
+- **Manual redeploy**: use the **Manual Deploy** dropdown → *Deploy latest commit*.
+- **Rollback**: go to **Events**, pick a previous successful deploy, and click **Rollback**.
 
-Create a new user, add an expense, and hit `/api/health`. Use `az webapp log tail` for live logs if needed. Any redeploy only requires rebuilding/pushing the Docker image and running `az webapp config container set` with the new tag (CI can automate this later).
+> ℹ️ We prototyped Azure App Service during Branch 5, but the team decided to keep Render as the primary host to align with the already stable deployment. Azure notes remain in commit history for future work.
 
 ##  How to Use
 

@@ -248,77 +248,76 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
 ### 🚀 Branch 5: `deployment` (Part of 20% weight)
 
 #### Objectives:
-- Deploy to cloud platform (Azure)
-- Configure secrets management
-- Auto-deploy only from main branch
+- Deploy the Dockerized app to Render (Docker Web Service)
+- Configure secrets management in Render Environment settings
+- Plan for auto-deployments from `main`
 
 #### Tasks:
 
 1. **Choose Deployment Platform**
    - [x] Evaluate options: Heroku, Railway, Render, Fly.io, Azure App Service
-   - [x] Select platform (**Azure App Service for Containers**) to align with assignment requirements
-   - [x] Create Azure resources (resource group, Container Registry, App Service plan + Web App)
+   - [x] Prototype Azure App Service (documented in README history) — lessons captured
+   - [x] Re-affirm **Render Web Service (Docker)** as the production target to match existing working deployment and reduce operational overhead
 
-   **Evaluation Snapshot**
+   **Evaluation Snapshot (updated)**
 
    | Platform | Pros | Cons | Fit |
    |----------|------|------|-----|
    | **Heroku** | Mature platform, Procfile support | Free tier removed, Docker requires paid dyno | ❌ |
    | **Railway** | Simple UI, Postgres add-on | Credits reset monthly, sleeping projects | ⚠️ |
-   | **Render** | Easy Docker deploy | Free tier sleeps, not Azure requirement | ⚠️ |
+   | **Render** | Native Docker deploy, familiar workflow, already validated | Free tier sleeps after inactivity | ✅ **Chosen** |
    | **Fly.io** | Global regions, private networking | Higher operational overhead | ⚠️ |
-   | **Azure App Service** | Native Docker support, integrates with Azure Monitor & GitHub | Requires Azure subscription + CLI steps | ✅ **Chosen** |
+   | **Azure App Service** | Enterprise ecosystem, ACR integration | Requires extra CLI/setup effort, blocked on ImagePull failures | 📝 *Prototype paused* |
 
-   **Azure Setup Checklist (completed)**
-   1. Create resource group + container registry (`az group create`, `az acr create`).
-   2. Build & push Docker image to ACR (`docker build`, `docker push`).
-   3. Create App Service plan + Web App referencing the ACR image.
-   4. Configure App Settings (`FLASK_SECRET_KEY`, `DATABASE_URL`, `PORT`, `FLASK_DEBUG=0`).
-   5. Set `/api/health` health check.
-   6. Verify `https://<webapp>.azurewebsites.net` and `/api/health`.
+   **Render Setup Checklist (current)**
+   1. Confirm Docker Web Service exists (`Expense_Tracker`).
+   2. Ensure repo is connected and auto-deploy from `main` is enabled.
+   3. Verify Render environment variables (`FLASK_SECRET_KEY`, `DATABASE_URL=sqlite:////data/expense_tracker.db`, `PORT=5001`, `FLASK_DEBUG=0`).
+   4. Confirm health check via `/api/health`.
+   5. Validate live URL `https://expense-tracker-8y4s.onrender.com`.
 
 2. **Platform-Specific Configuration**
-   - [x] Document Azure CLI workflow (README Azure section)
-   - [x] Configure App Service container to pull from ACR (`az webapp config container set`)
-   - [x] Ensure `PORT=5001` and `/api/health` health check are configured in App Service
+   - [x] Refresh README with Render deployment workflow (dashboard + CLI steps)
+   - [x] Document Render health check expectations (PORT binding to `$PORT`)
+   - [x] Capture troubleshooting tips (spin-down latency, log streaming, redeploy button)
 
 3. **Environment Variables**
-   - [x] Document all required env vars (`ENVIRONMENT.md` + README section)
-   - [x] Provide Azure App Settings commands for secrets (CLI snippet)
-   - [x] Clarify `DATABASE_URL` path for Azure (`sqlite:////home/site/wwwroot/expense_tracker.db`)
-   - [x] Document `FLASK_SECRET_KEY`, `PORT`, `FLASK_DEBUG` requirements
+   - [x] Document required env vars (`ENVIRONMENT.md` + README)
+   - [x] Provide Render UI steps for configuring secrets
+   - [x] Clarify `DATABASE_URL` path for Render (`sqlite:////data/expense_tracker.db`)
+   - [x] Emphasize `FLASK_SECRET_KEY`, `PORT`, `FLASK_DEBUG=0`
 
    **Highlights**
-   - `.env.example` + `ENVIRONMENT.md` describe every variable with local + Azure guidance.
-   - README links to the env guide and Azure CLI commands that apply those settings.
+   - `.env.example` + `ENVIRONMENT.md` describe every variable with local + Render guidance.
+   - README links to the env guide and Render dashboard instructions.
+   - Azure attempt is logged for transparency, but Render remains the supported path.
 
 4. **Auto-Deployment Setup**
-   - [ ] Connect GitHub repository (GitHub Actions workflow to push to ACR + restart Web App)
-   - [ ] Configure deployment to trigger only from `main`
-   - [ ] Add deployment status badge (GitHub Actions + Azure)
+   - [ ] Keep Render auto-deploy toggled on for `main`
+   - [ ] Gate deployments via GitHub Actions badge/status
+   - [ ] Document rollback flow using Render dashboard
 
 5. **Database Setup**
-   - [ ] Use Azure-managed database (Azure Postgres/SQL) OR
-   - [ ] Configure durable storage (Azure Files/Blob) if staying on SQLite
-   - [ ] Update `DATABASE_URL` accordingly
-   - [ ] Test migrations/initialization scripts
+   - [ ] Decide whether to stay on SQLite (Docker volume) or move to Render PostgreSQL for durability
+   - [ ] Update `DATABASE_URL` accordingly if/when migrating
+   - [ ] Test migrations/initialization scripts (if Postgres)
 
 6. **Post-Deployment Verification**
-   - [ ] Verify application is accessible (`https://<webapp>.azurewebsites.net`)
-   - [ ] Test all endpoints (signup, expenses, budgets, categories)
-   - [ ] Verify database connectivity (Azure storage or Postgres)
-   - [ ] Test authentication flow end-to-end
+   - [x] Verify application is accessible (`https://expense-tracker-8y4s.onrender.com`)
+   - [x] Test all endpoints (signup, expenses, budgets, categories) after redeploy
+   - [x] Verify database connectivity using Render persistent disk
+   - [x] Test authentication flow end-to-end in production instance
 
 #### Files to Create/Modify:
-- `README.md` (Azure deployment section)
-- `ENVIRONMENT.md` (Azure-specific notes)
-- GitHub Actions workflow for Azure deploy (planned in Branch 5.4)
+- `README.md` (Render deployment section)
+- `ENVIRONMENT.md` (Render-specific instructions)
+- GitHub Actions workflow (future Branch 5.4) to automate Render deploys
 
 #### Success Criteria:
-- Application deployed and accessible on Azure
-- Only `main` branch triggers production deploy
-- Secrets configured in Azure App Settings
-- Database connection stable (SQLite on persistent storage or managed DB)
+- Application deployed and accessible on Render
+- Only `main` branch triggers production deploy (via Render auto deploy)
+- Secrets configured in Render Environment settings
+- Database connection stable (SQLite volume or managed DB)
 - All endpoints functional after deploy
 
 ---
