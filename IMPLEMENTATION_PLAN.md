@@ -301,23 +301,21 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - Inspect **Logs → Runtime** to verify the app bound to `$PORT` and database migrations ran cleanly.
 
 2. **Platform-Specific Configuration**
-   - [ ] Create platform config file (e.g., `Procfile` for Heroku, `railway.json` for Railway)
-   - [ ] Configure build command
-   - [ ] Configure start command
-   - [ ] Set up port configuration
+   - [x] Configure Render Docker service (Dockerfile build, `CMD ["python","app.py"]`)
+   - [x] Map internal port `5001` to Render’s `$PORT`
+   - [x] Document Render dashboard workflow in README (create service, logs, redeploy, rollback)
 
 3. **Environment Variables**
-   - [ ] Document all required env vars
-   - [ ] Set up secrets in platform dashboard
-   - [ ] Configure DATABASE_URL (use platform DB or external)
-   - [ ] Set FLASK_SECRET_KEY
-   - [ ] Set PORT (usually auto-set by platform)
+   - [x] Document required env vars (`README.md`, `ENVIRONMENT.md`, `.env.example`)
+   - [x] Set up secrets in Render Environment (FLASK_SECRET_KEY, DATABASE_URL, PORT, FLASK_DEBUG)
+   - [x] Clarify DATABASE_URL for Render persistent disk (`sqlite:////data/expense_tracker.db`)
+   - [x] Provide instructions for secret rotation
 
 4. **Auto-Deployment Setup**
-   - [ ] Connect GitHub repository
-   - [ ] Configure to deploy only from `main` branch
-   - [ ] Set up deployment triggers
-   - [ ] Add deployment status badge
+   - [x] Add GitHub Actions workflow `.github/workflows/cd-render.yml`
+   - [x] Describe Render Deploy Hook usage + rollback steps in README
+   - [ ] Store Render Deploy Hook URL as GitHub secret `RENDER_DEPLOY_HOOK`
+   - [ ] (Optional) Add deploy badge / mention in README once secret wired
 
 5. **Database Setup**
    - [ ] Use platform database service OR

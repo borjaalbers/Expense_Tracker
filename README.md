@@ -326,6 +326,12 @@ pytest tests/test_app.py           # Test Flask routes
 - **Backend files**: 90%+ coverage
 - **Files covered**: `app.py`, `models.py`, `storage_db.py`, `db.py`
 
+##  CI/CD
+
+- **Continuous Integration**: `.github/workflows/ci.yml` (matrix across Python versions, installs deps, runs lint/tests, enforces coverage, and publishes reports). Triggered on every `push`, `pull_request`, or manual `workflow_dispatch`.
+- **Continuous Deployment**: `.github/workflows/cd-render.yml` triggers whenever `main` is updated (or via manual dispatch). It POSTs to Render’s Deploy Hook so the Docker Web Service redeploys the latest image. Store the hook URL as a GitHub secret named `RENDER_DEPLOY_HOOK`. Rotate the hook in Render → Settings → Deploy Hooks if it ever leaks.
+- **Rollback flow**: Use Render’s Events tab to redeploy a previous successful image; CI continues to guard future pushes.
+
 ##  Troubleshooting
 
 ### Port Already in Use
