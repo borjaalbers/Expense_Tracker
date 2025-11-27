@@ -25,13 +25,13 @@ from utils.validation import (
     validate_credentials,
 )
 
-Base.metadata.create_all(bind=ENGINE)
-
 # Health check module
 import health_check
 
 # Metrics module
 import metrics
+
+Base.metadata.create_all(bind=ENGINE)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config.from_object(Config)
@@ -43,19 +43,11 @@ expense_service = ExpenseService(lambda: storage)
 budget_service = BudgetService(lambda: storage)
 category_service = CategoryService(lambda: storage)
 
-# Initialize health check tracking and metrics collection
-def _initialize_monitoring():
-    """Initialize monitoring components safely."""
-    try:
-        health_check.initialize_health_check()
-        metrics.track_request_metrics(app)
-    except Exception:
-        # Silently fail if monitoring can't be initialized (e.g., in some test environments)
-        # Monitoring will still work if initialized later
-        pass
+# Initialize health check tracking
+health_check.initialize_health_check()
 
-# Initialize monitoring after app creation
-_initialize_monitoring()
+# Initialize metrics collection middleware
+metrics.track_request_metrics(app)
 
 # --------------------------
 # Helper utilities
