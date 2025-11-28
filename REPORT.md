@@ -179,4 +179,3 @@ The Expense Tracker project evolved from a monolithic Flask demo into a producti
 - Expand CD to blue/green deployments or Render Preview Environments for pull requests.
 
 With these foundations in place, the application is stable, observable, and easily deployable—meeting the assignment’s objectives and providing a platform for future enhancements.
-
