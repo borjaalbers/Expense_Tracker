@@ -21,7 +21,7 @@ class BaseRepository:
 
     @classmethod
     def _execute(cls, fn: Callable[[Session], TResult]) -> TResult:
-        with get_session() as session:
+    with get_session() as session:
             return fn(session)
 
     @classmethod
@@ -76,8 +76,8 @@ class UserRepository(BaseRepository):
     def create(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         def _run(session: Session):
             obj = cls.model(username=data["username"], password_hash=data["password_hash"])
-            session.add(obj)
-            session.flush()
+        session.add(obj)
+        session.flush()
             return cls._to_dict(obj)
 
         return cls._execute(_run)
@@ -142,11 +142,11 @@ class ExpenseRepository(BaseRepository):
                 user_id=data["user_id"],
                 amount=data["amount"],
                 category=data["category"],
-                date=date_obj,
+            date=date_obj,
                 note=data["note"],
-            )
-            session.add(obj)
-            session.flush()
+        )
+        session.add(obj)
+        session.flush()
             return cls._to_dict(obj)
 
         return cls._execute(_run)
@@ -155,14 +155,14 @@ class ExpenseRepository(BaseRepository):
     def update(cls, expense_id: int, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         def _run(session: Session):
             exp = cls._get(session, expense_id)
-            if not exp:
-                return None
+        if not exp:
+            return None
             for field, value in updates.items():
                 if field == "date" and value:
                     setattr(exp, field, date.fromisoformat(value))
-                else:
+            else:
                     setattr(exp, field, value)
-            session.flush()
+        session.flush()
             return cls._to_dict(exp)
 
         return cls._execute(_run)
@@ -171,22 +171,22 @@ class ExpenseRepository(BaseRepository):
     def delete(cls, expense_id: int) -> bool:
         def _run(session: Session):
             exp = cls._get(session, expense_id)
-            if not exp:
-                return False
-            session.delete(exp)
-            return True
+        if not exp:
+            return False
+        session.delete(exp)
+        return True
 
         return cls._execute(_run)
 
     @classmethod
     def summary_by_category(cls, user_id: int) -> Dict[str, float]:
         def _run(session: Session):
-            rows = session.execute(
+        rows = session.execute(
                 select(cls.model.category, func.sum(cls.model.amount))
                 .where(cls.model.user_id == user_id)
                 .group_by(cls.model.category)
-            ).all()
-            return {cat or "Uncategorized": float(total or 0.0) for cat, total in rows}
+        ).all()
+        return {cat or "Uncategorized": float(total or 0.0) for cat, total in rows}
 
         return cls._execute(_run)
 
@@ -194,12 +194,12 @@ class ExpenseRepository(BaseRepository):
     def monthly_totals(cls, user_id: int) -> Dict[str, float]:
         def _run(session: Session):
             month_expr = cls._month_bucket(cls.model.date)
-        rows = session.execute(
+            rows = session.execute(
                 select(month_expr, func.sum(cls.model.amount))
                 .where(cls.model.user_id == user_id)
                 .group_by(month_expr)
-        ).all()
-        return {ym or "": float(total or 0.0) for ym, total in rows}
+            ).all()
+            return {ym or "": float(total or 0.0) for ym, total in rows}
 
         return cls._execute(_run)
 
