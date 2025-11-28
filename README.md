@@ -374,10 +374,13 @@ ruff check .
 
 | Variable | Required | Default | Description / Where to Set |
 |----------|----------|---------|-----------------------------|
-| `FLASK_SECRET_KEY` | ✅ | `dev-secret-key-change-me` | Flask session key. Store in `.env` locally and as a GitHub Action secret for CI/deploy. |
-| `DATABASE_URL` | ➖ | SQLite file in repo | Override to use Postgres/MySQL; set in `.env` or GitHub Secrets. |
-| `PORT` | ➖ | `5001` | Local/server port; most cloud hosts inject automatically. |
+| `FLASK_SECRET_KEY` | ✅ | `dev-secret-key-change-me` | Flask session key. Store in `.env`, Render Environment, and GitHub Secrets. Rotate before production. |
+| `DATABASE_URL` | ✅ (prod) | `sqlite:////data/expense_tracker.db` | SQLite for local/dev; set to Render Postgres URI (`postgres://...`) when using managed DB. |
+| `PORT` | ➖ | `5001` | Local/server port; Render injects `$PORT` automatically but we pin to 5001 inside the container. |
+| `FLASK_DEBUG` | ➖ | `1` | Force `0` in production to prevent reload loops (Render/Azure). |
+| `PGSSLMODE` | ➖ | `disable` | Set to `require` when using Render Postgres so SQLAlchemy negotiates TLS. |
 | `DEFAULT_CATEGORIES` | ➖ | Built-in list | Customize seeded categories via comma-separated string. |
+| `RENDER_DEPLOY_HOOK` | ✅ (CD) | — | GitHub secret used by `.github/workflows/cd-render.yml` to trigger redeploys. Never commit the URL. |
 
 **Local development**
 1. Copy `.env.example` → `.env`
@@ -385,8 +388,9 @@ ruff check .
 3. `source .env` (macOS/Linux) or use your IDE/terminal env var support
 
 **GitHub Actions / Deployment**
-- Add the same secrets under *Settings → Secrets and variables → Actions* (e.g., `FLASK_SECRET_KEY`, `DATABASE_URL`)
+- Add the same secrets under *Settings → Secrets and variables → Actions* (e.g., `FLASK_SECRET_KEY`, `DATABASE_URL`, `RENDER_DEPLOY_HOOK`)
 - The CI workflow automatically exports them when present, keeping sensitive values out of the repo
+- Render → Settings → Environment: mirror `.env` keys plus `PGSSLMODE=require`. Documented exhaustively in `ENVIRONMENT.md`.
 
 ##  CI/CD Pipeline
 
@@ -424,6 +428,30 @@ pytest tests/test_app.py           # Test Flask routes
 - **Continuous Integration**: `.github/workflows/ci.yml` (matrix across Python versions, installs deps, runs lint/tests, enforces coverage, and publishes reports). Triggered on every `push`, `pull_request`, or manual `workflow_dispatch`.
 - **Continuous Deployment**: `.github/workflows/cd-render.yml` triggers whenever `main` is updated (or via manual dispatch). It POSTs to Render’s Deploy Hook so the Docker Web Service redeploys the latest image. Store the hook URL as a GitHub secret named `RENDER_DEPLOY_HOOK`. Rotate the hook in Render → Settings → Deploy Hooks if it ever leaks.
 - **Rollback flow**: Use Render’s Events tab to redeploy a previous successful image; CI continues to guard future pushes.
+- **Verification gates**: After each deploy we run the manual checklist below (sign in/out, CRUD, budget, categories, `/api/health`, `/metrics`, persistence) and keep screenshots under `docs/screenshots/render-verification/` for auditing.
+
+## 📈 Monitoring & Observability
+
+- `/api/health` now returns service status, DB connectivity, uptime, and git SHA metadata. Render health checks point here (Settings → Health Check Path).
+- `/metrics` exposes Prometheus counters/histograms via `prometheus-client` for request count, latency, and error tracking. Curl it directly or point Prometheus at it.
+- **Local Prometheus + Grafana stack**
+  1. `docker compose -f docker-compose.monitoring.yml up`
+  2. Prometheus scrapes the Flask container via `prometheus.yml`
+  3. Grafana auto-imports `grafana/dashboards/expense-tracker.json` so you can see request rate, p95 latency, error % and active sessions.
+- Export screenshots or tweak the dashboard before submitting the assignment; Grafana credentials + port mappings live in `docker-compose.monitoring.yml`.
+
+## ✅ Deployment Verification Checklist (Branch 5.6)
+
+We validate every production redeploy using the same steps referenced in `IMPLEMENTATION_PLAN.md`:
+
+1. Sign up, sign in, sign out.
+2. Create/edit/delete expenses and verify both dashboard tables and charts reflect the change.
+3. Update the monthly budget and inspect the status banner.
+4. Add/delete categories and confirm dropdown sync.
+5. Hit `/api/health` and `/metrics` for HTTP 200 responses.
+6. Run the GitHub `cd-render` workflow, wait for Render to redeploy, then repeat 1–4 to confirm persisted data.
+
+Screenshots for the latest run live in `docs/screenshots/render-verification/` and can be re-generated using the links listed in `IMPLEMENTATION_PLAN.md`.
 
 ##  Troubleshooting
 
@@ -444,6 +472,11 @@ rm expense_tracker.db
 python db_init.py
 ```
 
+**Render/Postgres tips**
+- If the service is stuck on “Deploying…”, open **Logs → Live** and confirm the Docker image built successfully. Cold starts on the free tier can take ~2 minutes.
+- When switching from SQLite to Render Postgres, update `DATABASE_URL`, set `PGSSLMODE=require`, redeploy, then run `python db_init.py` locally with the Postgres URL to run migrations.
+- The free tier does not support persistent disks; use the managed Postgres service (Branch 5.5) for durable data.
+
 ### Dependencies Issues
 ```bash
 # Reinstall dependencies
@@ -455,6 +488,13 @@ With the server running in one terminal:
 ```bash
 python test_sqlite_app.py
 ```
+
+## 🗂️ Documentation & Reports
+
+- `IMPLEMENTATION_PLAN.md` – branch-by-branch checklist plus Render verification evidence.
+- `ENVIRONMENT.md` – definitive guide to every environment variable (local, CI, Render).
+- `REPORT.md` – 5–6 page narrative summarizing all DevOps improvements (required deliverable).
+- `docs/screenshots/render-verification/` – screenshot set referenced in Branch 5.6 and the report.
 
 ##  Future Enhancements
 

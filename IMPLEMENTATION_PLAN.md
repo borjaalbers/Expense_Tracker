@@ -301,15 +301,15 @@ This document outlines the step-by-step plan to complete all 8 branches for impr
    - [x] Update README + `ENVIRONMENT.md` to describe the Postgres workflow and required env vars
    - [ ] (Optional) Document Postgres backup/maintenance steps for production hand-off
 
-6. **Post-Deployment Verification (in progress)**
-   - [ ] Record manual verification of each critical workflow on Render:
-       - [ ] Sign up / sign in / sign out
-       - [ ] Create, edit, delete expenses and confirm charts update
-       - [ ] Set monthly budget and observe budget status
-       - [ ] Manage categories (add/delete) and verify dropdown sync
-   - [ ] Hit `/api/health` and `/metrics` to confirm status/metrics endpoints respond with 200s
-   - [ ] Confirm data persistence across redeploy by running `cd-render` and re-checking user data
-   - [ ] Summarize verification results + screenshots/notes in README or REPORT.md section
+6. **Post-Deployment Verification (completed 2025-11-28)**
+   - [x] Record manual verification of each critical workflow on Render:
+       - [x] Sign up / sign in / sign out (Screenshot: `render-verification/auth-flow.png`)
+       - [x] Create, edit, delete expenses and confirm charts update (`render-verification/expenses-charts.png`)
+       - [x] Set monthly budget and observe budget status (`render-verification/budget-status.png`)
+       - [x] Manage categories (add/delete) and verify dropdown sync (`render-verification/categories.png`)
+   - [x] Hit `/api/health` and `/metrics` to confirm status/metrics endpoints respond with 200s (`render-verification/health.png`, `render-verification/metrics.png`)
+   - [x] Confirm data persistence across redeploy by running `cd-render` and re-checking user data (`render-verification/persistence.png`)
+   - [x] Summarize verification results in README/REPORT + retain screenshots under `docs/screenshots/render-verification/`
 
 #### Files to Create/Modify:
 - `README.md` (Render deployment section)
